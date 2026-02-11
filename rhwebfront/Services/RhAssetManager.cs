@@ -149,12 +149,17 @@ namespace RHWebFront.Services
         }
         #endregion
 
-        #region Open Orders
+        #region Orders
         private const int OPEN_ORDERS_CACHE_SECONDS = 60;
+        private const int CLOSED_ORDERS_CACHE_SECONDS = 60;
 
         private RHOrder[] _openOrdersCache;
         private DateTimeOffset _openOrdersCacheExpires = DateTimeOffset.MinValue;
         private readonly SemaphoreSlim _openOrdersLock = new(1, 1);
+
+        private RHOrder[] _closedOrdersCache;
+        private DateTimeOffset _closedOrdersCacheExpires = DateTimeOffset.MinValue;
+        private readonly SemaphoreSlim _closedOrdersLock = new(1, 1);
 
         public async Task<RHOrder[]> GetOpenOrders()
         {
@@ -175,6 +180,25 @@ namespace RHWebFront.Services
             finally { _openOrdersLock.Release(); }
         }
 
+        public async Task<RHOrder[]> GetClosedOrders()
+        {
+            if (_closedOrdersCache is not null && _closedOrdersCacheExpires > DateTimeOffset.UtcNow) return _closedOrdersCache;
+
+            await _closedOrdersLock.WaitAsync();
+            try
+            {
+                if (_closedOrdersCache is not null && _closedOrdersCacheExpires > DateTimeOffset.UtcNow) return _closedOrdersCache;
+
+                var results = await GetOrders(new Dictionary<string, string[]> { ["state"] = ["filled", "canceled", "failed"] });
+                
+                _closedOrdersCache = results;
+                _closedOrdersCacheExpires = DateTimeOffset.UtcNow.AddSeconds(CLOSED_ORDERS_CACHE_SECONDS);
+
+                return results;
+            }
+            finally { _closedOrdersLock.Release(); }
+        }
+
         public async Task<RHOrder[]> GetOrders(IDictionary<string, string[]> queryParams = null)
         {
             var parameters = queryParams is null || queryParams.Count == 0 ? new Dictionary<string, string[]>() : queryParams;
@@ -186,6 +210,13 @@ namespace RHWebFront.Services
             _openOrdersCache = null;
             _openOrdersCacheExpires = DateTimeOffset.MinValue;
             logger.LogDebug("Open orders cache invalidated");
+        }
+
+        public void InvalidateClosedOrdersCache()
+        {
+            _closedOrdersCache = null;
+            _closedOrdersCacheExpires = DateTimeOffset.MinValue;
+            logger.LogDebug("Closed orders cache invalidated");
         }
         #endregion
 
@@ -207,6 +238,7 @@ namespace RHWebFront.Services
             InvalidateAccountCache();
             InvalidateHoldingsCache();
             InvalidateOpenOrdersCache();
+            InvalidateClosedOrdersCache();
             logger.LogInformation("All caches invalidated");
         }
     }

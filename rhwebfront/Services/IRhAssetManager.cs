@@ -12,10 +12,12 @@ namespace RHWebFront.Services
         Task<RHBidAsk[]> GetBestBidAsk(IDictionary<string, string[]> queryParams);
         Task<RHOrder[]> GetOrders(IDictionary<string, string[]> queryParams = null);
         Task<RHOrder[]> GetOpenOrders();
+        Task<RHOrder[]> GetClosedOrders();
         
         void InvalidateAccountCache();
         void InvalidateHoldingsCache();
         void InvalidateAllCaches();
         void InvalidateOpenOrdersCache();
+        void InvalidateClosedOrdersCache();
     }
 }
