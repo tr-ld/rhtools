@@ -30,12 +30,11 @@ else
 }
 
 @code {
-    [PersistentState]
-    public rhdata.RHOrder[] Orders { get; set; }
+    private rhdata.RHOrder[] Orders { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         Orders = await manager.GetOpenOrders();
-        // Orders = await manager.GetOrders();
+        // Orders = await manager.GetAllOrders();
     }
 }

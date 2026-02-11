@@ -148,17 +148,17 @@ namespace RHWebFront.Services
 
         public async Task<RHOrder[]> GetOpenOrders()
         {
-            var allOrders = await GetAllOrdersCached();
+            var allOrders = await GetAllOrders();
             return allOrders.Where(o => o.State is "open" or "partially_filled").ToArray();
         }
 
         public async Task<RHOrder[]> GetClosedOrders()
         {
-            var allOrders = await GetAllOrdersCached();
+            var allOrders = await GetAllOrders();
             return allOrders.Where(o => o.State is "filled" or "canceled" or "failed").ToArray();
         }
 
-        private async Task<RHOrder[]> GetAllOrdersCached()
+        public async Task<RHOrder[]> GetAllOrders()
         {
             if (cache.TryGetValue(ORDERS_CACHE_KEY, out RHOrder[] cachedOrders)) return cachedOrders;
 
@@ -176,7 +176,7 @@ namespace RHWebFront.Services
             finally { _ordersLock.Release(); }
         }
 
-        public async Task<RHOrder[]> GetOrders(IDictionary<string, string[]> queryParams = null)
+        private async Task<RHOrder[]> GetOrders(IDictionary<string, string[]> queryParams = null)
         {
             var parameters = queryParams is null || queryParams.Count == 0 ? new Dictionary<string, string[]>() : queryParams;
             return await apiClient.GetOrders(parameters);
