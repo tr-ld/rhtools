@@ -55,6 +55,8 @@ namespace RHWebFront
             svc.AddRazorComponents()
                    .AddInteractiveServerComponents();
 
+            svc.AddMemoryCache();
+
             svc.AddHttpClient<IRhApiClient, RhApiClient>(client => //this suffices for registering RhApiClient - do not register separately
             {
                 client.Timeout = TimeSpan.FromSeconds(10);
