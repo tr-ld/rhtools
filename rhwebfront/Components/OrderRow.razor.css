@@ -1,0 +1,197 @@
+/* Order row styling - applies to tr rendered by this component */
+tr {
+    background-color: var(--surface);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+tr:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+td {
+    padding: 1rem 0.75rem;
+    border-top: 1px solid transparent;
+    border-bottom: 1px solid transparent;
+}
+
+td:first-child {
+    border-left: 3px solid var(--primary);
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+td:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.symbol {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.side-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+}
+
+.buy-side .side-badge {
+    background-color: var(--order-buy-bg);
+    color: var(--order-buy-fg);
+}
+
+.sell-side .side-badge {
+    background-color: var(--order-sell-bg);
+    color: var(--order-sell-fg);
+}
+
+.state-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.order-state-open .state-badge {
+    background-color: var(--order-state-open-bg);
+    color: var(--order-state-open-fg);
+}
+
+.order-state-partially-filled .state-badge {
+    background-color: var(--order-state-partially-filled-bg);
+    color: var(--order-state-partially-filled-fg);
+}
+
+.order-state-filled .state-badge {
+    background-color: var(--order-state-filled-bg);
+    color: var(--order-state-filled-fg);
+}
+
+.order-state-canceled .state-badge,
+.order-state-failed .state-badge {
+    background-color: var(--order-state-canceled-bg);
+    color: var(--order-state-canceled-fg);
+}
+
+.numeric {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.timestamp {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* Highlight border colors by state */
+.order-state-open td:first-child {
+    border-left-color: var(--order-state-open-fg);
+}
+
+.order-state-partially-filled td:first-child {
+    border-left-color: var(--order-state-partially-filled-fg);
+}
+
+.order-state-filled td:first-child {
+    border-left-color: var(--order-state-filled-fg);
+}
+
+.order-state-canceled td:first-child,
+.order-state-failed td:first-child {
+    border-left-color: var(--order-state-canceled-fg);
+}
+
+/* Executions row */
+.executions-row {
+    cursor: default;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.executions-row:hover {
+    transform: none;
+    box-shadow: none !important;
+}
+
+.executions-row td {
+    padding: 0 1rem !important;
+    background-color: transparent;
+}
+
+.executions-details {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.5s var(--theme-transition-easing),
+                opacity 0.5s var(--theme-transition-easing);
+}
+
+.executions-row.expanded .executions-details {
+    max-height: 500px;
+    opacity: 1;
+}
+
+.executions-content {
+    background: var(--executions-bg);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 0.25rem 0.5rem;
+}
+
+.executions-content h4 {
+    margin: 0 0 1rem 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+}
+
+.executions-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.executions-table th {
+    background-color: var(--executions-header-bg);
+    padding: 0.5rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-medium);
+}
+
+.executions-table th.numeric-header {
+    text-align: right;
+}
+
+.executions-table td {
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.executions-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.no-executions {
+    margin: 0;
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+}

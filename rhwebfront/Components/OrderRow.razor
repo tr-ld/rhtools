@@ -1,0 +1,65 @@
+@using rhdata
+
+<tr class="@($"order-state-{Order.State?.ToLower().Replace("_", "-")}")" @onclick="ToggleExpanded">
+    <td class="symbol">@Order.Symbol</td>
+    <td class="@(Order.Side?.ToLower() == "buy" ? "buy-side" : "sell-side")">
+        <span class="side-badge">@Order.Side</span>
+    </td>
+    <td>@Order.Type</td>
+    <td class="state">
+        <span class="state-badge">@Order.State</span>
+    </td>
+    <td class="numeric">@Order.FilledAssetQuantity.ToString("N8")</td>
+    <td class="numeric">@(Order.AveragePrice?.ToString("C") ?? "-")</td>
+    <td class="timestamp">@Order.CreatedAt.ToLocalTime().ToString("g")</td>
+    <td class="timestamp">@Order.UpdatedAt.ToLocalTime().ToString("g")</td>
+</tr>
+<tr class="executions-row @(_isExpanded ? "expanded" : "")">
+    <td colspan="8">
+        <div class="executions-details">
+            <div class="executions-content">
+                <h4>Executions</h4>
+                @if (Order.Executions?.Count > 0)
+                {
+                    <table class="executions-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th class="numeric-header">Quantity</th>
+                                <th class="numeric-header">Effective Price</th>
+                                <th class="numeric-header">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var execution in Order.Executions)
+                            {
+                                <tr>
+                                    <td>@execution.TimeStamp.ToLocalTime().ToString("G")</td>
+                                    <td class="numeric">@execution.Quantity.ToString("N8")</td>
+                                    <td class="numeric">@execution.EffectivePrice.ToString("C")</td>
+                                    <td class="numeric">@((execution.Quantity * execution.EffectivePrice).ToString("C"))</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="no-executions">No executions</p>
+                }
+            </div>
+        </div>
+    </td>
+</tr>
+
+@code {
+    [Parameter]
+    public RHOrder Order { get; set; } = default!;
+
+    private bool _isExpanded;
+
+    private void ToggleExpanded()
+    {
+        _isExpanded = !_isExpanded;
+    }
+}

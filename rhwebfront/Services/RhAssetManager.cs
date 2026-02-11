@@ -3,17 +3,8 @@ using RHWebFront.Models;
 
 namespace RHWebFront.Services
 {
-    public class RhAssetManager : IRhAssetManager
+    public class RhAssetManager(IRhApiClient apiClient, ILogger<RhAssetManager> logger) : IRhAssetManager
     {
-        private readonly IRhApiClient _apiClient;
-        private readonly ILogger<RhAssetManager> _logger;
-
-        public RhAssetManager(IRhApiClient apiClient, ILogger<RhAssetManager> logger)
-        {
-            _apiClient = apiClient;
-            _logger = logger;
-        }
-
         private string TradeCurrency { get; set; } = "USD";
 
         #region Account
@@ -29,7 +20,7 @@ namespace RHWebFront.Services
             {
                 if (_acctCache is not null) return _acctCache;
 
-                _acctCache = await _apiClient.GetAcct();
+                _acctCache = await apiClient.GetAcct();
                 return _acctCache;
             }
             finally { _acctLock.Release(); }
@@ -38,7 +29,7 @@ namespace RHWebFront.Services
         public void InvalidateAccountCache()
         {
             _acctCache = null;
-            _logger.LogDebug("Account cache invalidated");
+            logger.LogDebug("Account cache invalidated");
         }
         #endregion
 
@@ -60,7 +51,7 @@ namespace RHWebFront.Services
             {
                 if (IsHoldingsCacheValidForKey(key, out var cached)) return cached;
 
-                var results = await _apiClient.GetHoldings(symbols);
+                var results = await apiClient.GetHoldings(symbols);
                 var sorted = results.OrderBy(h => h.AssetCode).ToArray();
 
                 _holdingsCache = sorted;
@@ -89,7 +80,7 @@ namespace RHWebFront.Services
             _holdingsCache = null;
             _holdingsCacheKey = null;
             _holdingsCacheExpires = DateTimeOffset.MinValue;
-            _logger.LogDebug("Holdings cache invalidated");
+            logger.LogDebug("Holdings cache invalidated");
         }
         #endregion
 
@@ -107,7 +98,7 @@ namespace RHWebFront.Services
                 if (_assetSnapshots is not null) return _assetSnapshots.AsReadOnly();
 
                 _assetSnapshots = await SeedAssetsFromHoldings();
-                _logger.LogInformation("Asset snapshots populated with {Count} assets", _assetSnapshots.Count);
+                logger.LogInformation("Asset snapshots populated with {Count} assets", _assetSnapshots.Count);
 
                 return _assetSnapshots.AsReadOnly();
             }
@@ -146,7 +137,7 @@ namespace RHWebFront.Services
         public async Task<RHEstimatedPrice[]> GetEstimatedPrice(IDictionary<string, string[]> symbols)
         {
             var transformedSymbols = AppendCurrencyToValues(symbols);
-            return await _apiClient.GetEstimatedPrice(transformedSymbols);
+            return await apiClient.GetEstimatedPrice(transformedSymbols);
         }
         #endregion
 
@@ -154,7 +145,47 @@ namespace RHWebFront.Services
         public async Task<RHBidAsk[]> GetBestBidAsk(IDictionary<string, string[]> symbols)
         {
             var transformedSymbols = AppendCurrencyToValues(symbols);
-            return await _apiClient.GetBestBidAsk(transformedSymbols);
+            return await apiClient.GetBestBidAsk(transformedSymbols);
+        }
+        #endregion
+
+        #region Open Orders
+        private const int OPEN_ORDERS_CACHE_SECONDS = 60;
+
+        private RHOrder[] _openOrdersCache;
+        private DateTimeOffset _openOrdersCacheExpires = DateTimeOffset.MinValue;
+        private readonly SemaphoreSlim _openOrdersLock = new(1, 1);
+
+        public async Task<RHOrder[]> GetOpenOrders()
+        {
+            if (_openOrdersCache is not null && _openOrdersCacheExpires > DateTimeOffset.UtcNow) return _openOrdersCache;
+
+            await _openOrdersLock.WaitAsync();
+            try
+            {
+                if (_openOrdersCache is not null && _openOrdersCacheExpires > DateTimeOffset.UtcNow) return _openOrdersCache;
+
+                var results = await apiClient.GetOpenOrders();
+                
+                _openOrdersCache = results;
+                _openOrdersCacheExpires = DateTimeOffset.UtcNow.AddSeconds(OPEN_ORDERS_CACHE_SECONDS);
+
+                return results;
+            }
+            finally { _openOrdersLock.Release(); }
+        }
+
+        public async Task<RHOrder[]> GetOrders(IDictionary<string, string[]> queryParams = null)
+        {
+            var parameters = queryParams is null || queryParams.Count == 0 ? new Dictionary<string, string[]>() : queryParams;
+            return await apiClient.GetOrders(parameters);
+        }
+
+        public void InvalidateOpenOrdersCache()
+        {
+            _openOrdersCache = null;
+            _openOrdersCacheExpires = DateTimeOffset.MinValue;
+            logger.LogDebug("Open orders cache invalidated");
         }
         #endregion
 
@@ -175,16 +206,15 @@ namespace RHWebFront.Services
         {
             InvalidateAccountCache();
             InvalidateHoldingsCache();
-            _logger.LogInformation("All caches invalidated");
+            InvalidateOpenOrdersCache();
+            logger.LogInformation("All caches invalidated");
         }
     }
 
     internal static class AssetManagerExtensions
     {
         internal static string CoalesceToAll(this string[] symbols)
-        {
-            return (symbols == null || symbols.Length == 0) ? "__all" : string.Join(',', symbols.OrderBy(s => s, StringComparer.OrdinalIgnoreCase));
-        }
+        { return (symbols == null || symbols.Length == 0) ? "__all" : string.Join(',', symbols.OrderBy(s => s, StringComparer.OrdinalIgnoreCase)); }
 
         /// <summary>
         /// Extracts the base symbol from a compound symbol (e.g., "BTC" from "BTC-USD")

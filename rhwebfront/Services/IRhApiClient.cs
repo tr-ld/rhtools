@@ -9,5 +9,8 @@ namespace RHWebFront.Services
         Task<RHTradingPair[]> GetTradingPairs(string[] symbols);
         Task<RHEstimatedPrice[]> GetEstimatedPrice(IDictionary<string, string[]> queryParams);
         Task<RHBidAsk[]> GetBestBidAsk(IDictionary<string, string[]> queryParams);
+        Task<RHOrder> GetOrder(Guid orderId);
+        Task<RHOrder[]> GetOrders(IDictionary<string, string[]> queryParams);
+        Task<RHOrder[]> GetOpenOrders();
     }
 }

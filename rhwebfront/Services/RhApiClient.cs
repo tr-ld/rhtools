@@ -45,7 +45,7 @@ namespace RHWebFront.Services
 
         private static string BuildQueryString(IDictionary<string, string[]> queryParams)
         {
-            if (queryParams == null || queryParams.Count == 0) return string.Empty;
+            if (queryParams is null || queryParams.Count == 0) return string.Empty;
 
             var pairs = queryParams
                 .Where(kv => kv.Key is not null && kv.Value is not null && kv.Value.Length > 0)
@@ -134,6 +134,33 @@ namespace RHWebFront.Services
             
             return resultsToken.ToObject<RHBidAsk[]>() ?? [];
         }
+        #endregion
+
+        #region Order - Orders
+        private const string GET_ORDERS_PATH = $"{RhOrderEndpoints.ORDER_GROUP}{RhOrderEndpoints.GET_ORDERS}";
+        
+        public async Task<RHOrder[]> GetOrders(IDictionary<string, string[]> queryParams)
+        {
+            var query = BuildQueryString(queryParams);
+            var path = $"{GET_ORDERS_PATH}{query}";
+
+            var resultToken = await MakeApiRequest<JToken>(HttpMethods.Get, path);
+            if (resultToken.IsNullOrEmpty()) return [];
+
+            var resultsToken = resultToken["results"] ?? resultToken;
+            if (resultsToken.IsNullOrEmpty()) return [];
+            
+            return resultsToken.ToObject<RHOrder[]>() ?? [];
+        }
+
+        public async Task<RHOrder> GetOrder(Guid orderId)
+        {
+            var orders = await GetOrders(new Dictionary<string, string[]> { ["id"] = [orderId.ToString()] });
+            return orders.Length > 0 ? orders[0] : null;
+        }
+
+        public async Task<RHOrder[]> GetOpenOrders()
+        { return await GetOrders(new Dictionary<string, string[]> { ["state"] = ["open", "partially_filled"] }); }
         #endregion
     }
 

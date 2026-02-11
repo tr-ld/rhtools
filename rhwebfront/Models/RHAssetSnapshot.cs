@@ -16,12 +16,12 @@ namespace RHWebFront.Models
         /// <summary>
         /// Current holdings information for this asset, if owned
         /// </summary>
-        public RHHolding? Holding { get; init; }
+        public RHHolding Holding { get; init; }
 
         /// <summary>
         /// Current best bid/ask pricing
         /// </summary>
-        public RHBidAsk? BidAsk { get; init; }
+        public RHBidAsk BidAsk { get; init; }
         #endregion
 
         #region Computed Properties

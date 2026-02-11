@@ -32,7 +32,7 @@ namespace rhdata
         public string State { get; set; } = default!;  // "filled", etc.
 
         [Column(TypeName = "decimal(38,18)")]
-        public decimal AveragePrice { get; set; }
+        public decimal? AveragePrice { get; set; }
 
         [Column(TypeName = "decimal(38,18)")]
         public decimal FilledAssetQuantity { get; set; }
