@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="rhapi/rhapi.csproj" />
+  <Project Path="rhdata/rhdata.csproj" Id="ba79640c-d2fe-4c9c-a763-1dbc48a66503" />
+  <Project Path="rhwebfront/RHWebFront.csproj" />
+</Solution>

@@ -1,0 +1,169 @@
+.page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* Use the global --blush tokens (defined in wwwroot/theme.css).
+   Use a gentle gradient from surface to blush-contrast. */
+.sidebar {
+    background-image: linear-gradient(180deg, var(--blush) 0%, var(--blush-contrast) 70%);
+    color: var(--blush-foreground);
+}
+
+/* Target nav links inside the sidebar (pierce component boundaries). */
+.sidebar ::deep .nav-link {
+    color: var(--blush-foreground);
+    background: transparent;
+    padding: 0.45rem 0.75rem;
+    border-radius: 6px;
+    text-decoration: none;
+    display: block;
+    transition: background-color 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.sidebar ::deep .nav-link,
+.sidebar ::deep .nav-link span,
+.sidebar ::deep .nav-link .bi,
+.sidebar ::deep .nav-link svg,
+.sidebar ::deep .nav-link img {
+    color: var(--blush-foreground) !important;
+    fill: var(--blush-foreground) !important;
+    stroke: var(--blush-foreground) !important;
+}
+
+/* Hover state */
+.sidebar ::deep .nav-link:hover {
+    background-color: var(--blush-hover);
+    color: var(--blush-foreground);
+    transform: translateY(-1px);
+}
+
+.sidebar ::deep .nav-link.active,
+.sidebar ::deep .nav-item .active {
+    background-color: var(--blush-contrast);
+    color: var(--blush-on-dark, #ffffff);
+}
+
+/* When active, ensure icons/text inside active anchor display the active foreground */
+.sidebar ::deep .nav-link.active,
+.sidebar ::deep .nav-link.active span,
+.sidebar ::deep .nav-link.active .bi,
+.sidebar ::deep .nav-link.active svg,
+.sidebar ::deep .nav-link.active img {
+    color: var(--blush-on-dark, #ffffff) !important;
+    fill: var(--blush-on-dark, #ffffff) !important;
+    stroke: var(--blush-on-dark, #ffffff) !important;
+}
+
+/* vertical nav spacing */
+.sidebar ::deep .nav-item {
+    margin: 0.25rem 0;
+}
+
+/* focus ring aligned with blush */
+.sidebar ::deep .nav-link:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(249, 192, 196, 0.25);
+}
+
+/* Top row: use theme surface, increase vertical space so content is not cut off,
+   and ensure child (Account card) stretches full width excluding the sidebar. */
+.top-row {
+    border-bottom: none;
+    justify-content: flex-end;
+    min-height: 72px;              /* keep the vertical space so card isn't cut off */
+    display: flex;
+    align-items: center;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+/* Make direct children of the top-row fill available width (so Account card stretches). */
+.top-row > * {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Keep link/button styles in the top-row */
+.top-row ::deep a, .top-row ::deep .btn-link {
+    white-space: nowrap;
+    margin-left: 1.5rem;
+    text-decoration: none;
+}
+
+.top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
+    text-decoration: underline;
+}
+
+.top-row ::deep a:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 640.98px) {
+    .top-row {
+        justify-content: space-between;
+        min-height: 88px; /* give a bit more space on small screens */
+    }
+
+    .top-row ::deep a, .top-row ::deep .btn-link {
+        margin-left: 0;
+    }
+}
+
+@media (min-width: 641px) {
+    .page {
+        flex-direction: row;
+    }
+
+    .sidebar {
+        width: 250px;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+    }
+
+    .top-row {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .top-row.auth ::deep a:first-child {
+        flex: 1;
+        text-align: right;
+        width: 0;
+    }
+
+    /* keep consistent horizontal padding with article on larger viewports */
+    .top-row, article {
+        padding-left: 2rem !important;
+        padding-right: 1.5rem !important;
+    }
+}
+
+#blazor-error-ui {
+    color-scheme: light only;
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}

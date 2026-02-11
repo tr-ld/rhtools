@@ -1,0 +1,24 @@
+:root {
+    /* Core color tokens */
+    --blush: hsl(350, 70%, 85%);           /* 0xF9C0C4 */
+    --blush-foreground: hsl(350, 70%, 18%);/* readable text on light blush */
+    --blush-hover: hsl(350, 70%, 78%);     /* slightly darker for hover */
+    --blush-contrast: hsl(350, 70%, 60%);  /* for active/selected states */
+    --blush-on-dark: #ffffff;              /* text on darker blush contrast */
+
+    /* Additional surface tokens for components */
+    --surface: hsl(350, 80%, 96%);         /* slightly darker surface so cards pop against white */
+    --surface-foreground: hsl(350, 70%, 21%); /* adjusted primary text on surface for contrast */
+    --muted: hsl(0 0% 40% / 0.65);         /* subdued text */
+    
+    /* Badge/pill backgrounds */
+    --badge-on-blush: rgba(255, 255, 255, 0.65); /* subtle badge on blush backgrounds */
+
+    /* Behavior / helper tokens */
+    --theme-transition-duration: 120ms;
+    --theme-transition-easing: ease;
+
+    /* Focus / accessibility helpers (use these in box-shadow values) */
+    --blush-focus-ring: 0 0 0 3px rgba(249, 192, 196, 0.25);
+    --blush-focus-ring-small: 0 0 0 0.25rem rgba(249, 192, 196, 0.6);
+}

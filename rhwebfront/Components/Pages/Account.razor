@@ -1,0 +1,20 @@
+﻿@using rhdata
+@using RHWebFront.Services
+@inject IRhAssetManager manager
+
+<div class="account-card">
+    <div class="account-info">
+        <h5 class="account-number">Account #: @Acct?.AccountNumber</h5>
+        <h5 class="account-buypower">@(Acct is null ? string.Empty : $"${Acct.BuyingPower:N4} {Acct.BuyingPowerCurrency}")</h5>
+    </div>
+
+    <h5 class="account-status">@Acct?.Status</h5>
+</div>
+
+@code {
+    private RHAccount Acct { get; set; }
+
+    #region Overrides of ComponentBase
+    protected override async Task OnInitializedAsync() { Acct = await manager.GetAccount(); }
+    #endregion
+}

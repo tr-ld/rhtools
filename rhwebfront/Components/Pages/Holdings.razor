@@ -1,0 +1,25 @@
+﻿@page "/holdings"
+@using RHWebFront.Services
+@using RHWebFront.Models
+@inject IRhAssetManager manager
+
+@if (Assets is null) { <p>Loading...</p> }
+else if (Assets.Count == 0) { <p>No holdings</p> }
+else
+{
+    <div class="holdings-grid">
+        @foreach (var asset in Assets)
+        {
+            <HoldingCard @key="asset.Symbol" Asset="@asset" />
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<RHAssetSnapshot> Assets { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Assets = await manager.GetAssets();
+    }
+}

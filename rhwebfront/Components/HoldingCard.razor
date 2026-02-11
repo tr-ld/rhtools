@@ -1,0 +1,44 @@
+@using RHWebFront.Models
+
+<article class="holding-card" tabindex="0" role="group" aria-label="@($"Holding {Asset.Symbol}")">
+    <header class="holding-card-header">
+        <div class="header-main-row">
+            <h3 class="asset-code">@Asset.Symbol</h3>
+            @if (Asset.CurrentPrice.HasValue && Asset.PositionValue.HasValue)
+            {
+                <div class="price-info">
+                    <div class="current-price">@Asset.CurrentPrice.Value.ToString("C2")</div>
+                    <div class="position-value">@Asset.PositionValue.Value.ToString("C2")</div>
+                </div>
+            }
+        </div>
+        @if (Asset.BidAsk is not null)
+        {
+            <div class="header-bid-ask-row">
+                <div class="bid-ask-label">bid / ask</div>
+                <div class="bid-ask-details">
+                    <span class="bid-ask-value">@Asset.BidAsk.BidInclusiveOfSellSpread.ToString("C2")</span>
+                    <span class="bid-ask-separator">/</span>
+                    <span class="bid-ask-value">@Asset.BidAsk.AskInclusiveOfBuySpread.ToString("C2")</span>
+                </div>
+            </div>
+        }
+    </header>
+
+    <div class="holding-card-body">
+        <div class="holding-row">
+            <span class="label">Total</span>
+            <span class="value">@Asset.Holding?.TotalQuantity</span>
+        </div>
+
+        <div class="holding-row">
+            <span class="label">Available</span>
+            <span class="value">@Asset.Holding?.QuantityAvailableForTrading</span>
+        </div>
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired]
+    public required RHAssetSnapshot Asset { get; set; }
+}

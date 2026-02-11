@@ -1,0 +1,59 @@
+﻿using System;
+using Newtonsoft.Json;
+using rhapi.Enums;
+using rhapi.Poco.Order.OrderConfig;
+
+namespace rhapi.Poco.Order
+{
+    [Serializable]
+    public class RhOrder
+    {
+        [JsonProperty("id")]
+        public string Id { get; set; }
+
+        [JsonProperty("account_number")]
+        public string AccountNumber { get; set; }
+
+        [JsonProperty("symbol")]
+        public string Symbol { get; set; }
+
+        [JsonProperty("client_order_id")]
+        public Guid ClientOrderId { get; set; }
+
+        [JsonProperty("side")]
+        public Side Side { get; set; }
+
+        [JsonProperty("executions")]
+        public RhOrderExecution[] Executions { get; set; }
+
+        [JsonProperty("type")]
+        public OrderType Type { get; set; }
+
+        [JsonProperty("state")]
+        public OrderState State { get; set; }
+
+        [JsonProperty("average_price")]
+        public decimal? AveragePrice { get; set; }
+
+        [JsonProperty("filled_asset_quantity")]
+        public decimal FilledAssetQuantity { get; set; }
+
+        [JsonProperty("created_at")]
+        public DateTime CreatedAt { get; set; }
+
+        [JsonProperty("updated_at")]
+        public DateTime UpdatedAt { get; set; }
+
+        [JsonProperty("market_order_config")]
+        public RhMarketOrderConfig MarketOrderConfig { get; set; }
+
+        [JsonProperty("limit_order_config")]
+        public RhLimitOrderConfig LimitOrderConfig { get; set; }
+
+        [JsonProperty("stop_loss_order_config")]
+        public RhStopLossOrderConfig StopLossOrderConfig { get; set; }
+
+        [JsonProperty("stop_limit_order_config")]
+        public RhStopLimitOrderConfig StopLimitOrderConfig { get; set; }
+    }
+}

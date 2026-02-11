@@ -1,0 +1,64 @@
+.account-card {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;                 /* vertical center */
+  justify-content: space-between;      /* left content / right status */
+  min-height: 72px;
+  padding: 0 1rem;
+  border-radius: 8px;
+  background: var(--surface);          /* solid fill matching left side of previous gradient */
+  border-left: 4px solid var(--blush-contrast); /* left border */
+  border-right: 4px solid var(--blush-contrast); /* added right border */
+  color: var(--surface-foreground);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  margin-top: 1rem;                    /* float the card down 1rem (fixed direction) */
+  margin-bottom: 0.5rem;
+}
+
+.account-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;   /* left-align all info */
+  gap: 0.12rem;
+}
+
+.account-number {
+  font-weight: 600;
+  margin: 0;
+  color: var(--blush-foreground);
+}
+
+.account-buypower {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.account-status {
+  margin: 0;
+  color: var(--blush-on-dark, #ffffff);
+  background: var(--blush-contrast);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  min-width: 6.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Responsive: stack vertically on narrow viewports but keep status right-aligned within the card */
+@media (max-width: 600px) {
+  .account-card {
+    flex-direction: column;
+    align-items: stretch;
+    min-height: auto;
+    gap: 0.5rem;
+    margin-top: 0.5rem; /* reduce float on small screens (same direction) */
+  }
+  .account-info { align-items: flex-start; }
+  .account-status { align-self: flex-end; }
+}
