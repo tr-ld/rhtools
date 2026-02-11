@@ -16,7 +16,8 @@ else
 }
 
 @code {
-    private IReadOnlyList<RHAssetSnapshot> AssetSnapshots { get; set; }
+    [PersistentState]
+    public IReadOnlyList<RHAssetSnapshot> AssetSnapshots { get; set; }
 
     protected override async Task OnInitializedAsync()
     {

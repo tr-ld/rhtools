@@ -17,7 +17,6 @@ namespace RHWebFront.Services
         void InvalidateAccountCache();
         void InvalidateHoldingsCache();
         void InvalidateAllCaches();
-        void InvalidateOpenOrdersCache();
-        void InvalidateClosedOrdersCache();
+        void InvalidateOrdersCache();
     }
 }

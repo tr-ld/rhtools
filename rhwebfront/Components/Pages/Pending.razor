@@ -30,7 +30,8 @@ else
 }
 
 @code {
-    private rhdata.RHOrder[] Orders { get; set; }
+    [PersistentState]
+    public rhdata.RHOrder[] Orders { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
