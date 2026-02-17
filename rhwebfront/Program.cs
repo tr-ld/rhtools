@@ -21,6 +21,14 @@ namespace RHWebFront
 
             var app = builder.Build();
 
+            // Ensure database is created and migrations are applied
+            using (var scope = app.Services.CreateScope())
+            {
+                //todo: move db location to appdata
+                var db = scope.ServiceProvider.GetRequiredService<RhDbContext>();
+                db.Database.Migrate();
+            }
+
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
