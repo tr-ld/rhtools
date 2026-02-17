@@ -1,13 +1,16 @@
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
+using rhapi.Enums;
 using rhdata;
+using RHWebFront.Config;
 using RHWebFront.Models;
 
 namespace RHWebFront.Services
 {
-    public class RhAssetManager(IRhApiClient apiClient, ILogger<RhAssetManager> logger, IMemoryCache cache) : IRhAssetManager
+    public class RhAssetManager(IRhApiClient apiClient, ILogger<RhAssetManager> logger, IMemoryCache cache, IOptionsSnapshot<AppConfig> appConfig) : IRhAssetManager
     {
         private readonly string _instanceId = Guid.NewGuid().ToString()[..8];
-        private string TradeCurrency { get; set; } = "USD";
+        private readonly AppConfig _appConfig = appConfig.Value;
 
         #region Cache Keys
         private const string ACCOUNT_CACHE_KEY = "Account";
@@ -196,7 +199,7 @@ namespace RHWebFront.Services
 
             var transformed = new Dictionary<string, string[]>();
             foreach (var kvp in symbols) 
-            { transformed[kvp.Key] = kvp.Value?.Select(v => $"{v}-{TradeCurrency}").ToArray(); }
+            { transformed[kvp.Key] = kvp.Value?.Select(v => $"{v}-{_appConfig.TradeCurrency}").ToArray(); }
 
             return transformed;
         }

@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using RHWebFront.Components;
+using RHWebFront.Config;
 using RHWebFront.Services;
 
 namespace RHWebFront
@@ -40,32 +41,43 @@ namespace RHWebFront
 
     internal static class StartupExtensions 
     {
-        internal static WebApplicationBuilder ConfigureServices(this WebApplicationBuilder builder)
+        extension(WebApplicationBuilder builder)
         {
-            var svc = builder.Services;
-
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+            internal WebApplicationBuilder ConfigureServices()
             {
-                ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy() },
-                NullValueHandling = NullValueHandling.Ignore,
-                Converters = { new Newtonsoft.Json.Converters.StringEnumConverter() }
-            };
+                var svc = builder.Services;
 
-            // Add services to the container.
-            svc.AddRazorComponents()
+                JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+                {
+                    ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy() },
+                    NullValueHandling = NullValueHandling.Ignore,
+                    Converters = { new Newtonsoft.Json.Converters.StringEnumConverter() }
+                };
+
+                // Add services to the container.
+                svc.AddRazorComponents()
                    .AddInteractiveServerComponents();
 
-            svc.AddMemoryCache();
+                svc.AddMemoryCache();
 
-            svc.AddHttpClient<IRhApiClient, RhApiClient>(client => //this suffices for registering RhApiClient - do not register separately
+                svc.AddHttpClient<IRhApiClient, RhApiClient>(client => //this suffices for registering RhApiClient - do not register separately
+                {
+                    client.Timeout = TimeSpan.FromSeconds(10);
+                    client.BaseAddress = new Uri(RhApiClient.BASE_URL);
+                });
+
+                svc.AddScoped<IRhAssetManager, RhAssetManager>();
+
+                builder.LoadConfig();
+
+                return builder;
+            }
+
+            private void LoadConfig()
             {
-                client.Timeout = TimeSpan.FromSeconds(10);
-                client.BaseAddress = new Uri(RhApiClient.BASE_URL);
-            });
-
-            svc.AddScoped<IRhAssetManager, RhAssetManager>();
-
-            return builder;
+                builder.Services.Configure<AppConfig>(builder.Configuration.GetSection("AppConfig"));
+                builder.Services.Configure<RulesConfig>(builder.Configuration.GetSection("Rules"));
+            }
         }
     }
 }
