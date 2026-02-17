@@ -1,10 +1,12 @@
+using Microsoft.Extensions.Options;
 using RHWebFront.Models;
 using RHWebFront.Repositories;
 using rhdata;
+using RHWebFront.Config;
 
 namespace RHWebFront.Services;
 
-public class SymbolWatchlistService(IServiceScopeFactory scopeFactory, ILogger<SymbolWatchlistService> logger) : ISymbolWatchlistService
+public class SymbolWatchlistService(IServiceScopeFactory scopeFactory, ILogger<SymbolWatchlistService> logger, IOptionsMonitor<AppConfig> appConfig) : ISymbolWatchlistService
 {
     private readonly SemaphoreSlim _lock = new(1, 1);
     private string[] _cachedSymbols = [];
@@ -42,12 +44,17 @@ public class SymbolWatchlistService(IServiceScopeFactory scopeFactory, ILogger<S
         finally { _lock.Release(); }
     }
 
-    private static async Task AddOrActivateSymbolsAsync(string[] symbols, ISymbolWatchlistRepository repo)
+    private async Task AddOrActivateSymbolsAsync(string[] symbols, ISymbolWatchlistRepository repo)
     {
+        var currency = appConfig.CurrentValue.TradeCurrency;
+
         foreach (var symbol in symbols)
         {
-            var existing = await repo.GetBySymbolAsync(symbol);
-            if (existing is null) { await repo.AddAsync(new SymbolWatchlistEntry { Symbol = symbol, IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }); }
+            var existing = await repo.GetBySymbolAndCurrencyAsync(symbol, currency);
+            if (existing is null)
+            { 
+                await repo.AddAsync(new SymbolWatchlistEntry { Symbol = symbol, IsActive = true, Currency = currency, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }); 
+            }
             else if (!existing.IsActive)
             {
                 existing.IsActive = true;
@@ -67,10 +74,11 @@ public class SymbolWatchlistService(IServiceScopeFactory scopeFactory, ILogger<S
         {
             using var scope = scopeFactory.CreateScope();
             var repo = scope.ServiceProvider.GetRequiredService<ISymbolWatchlistRepository>();
+            var currency = appConfig.CurrentValue.TradeCurrency;
 
             foreach (var symbol in symbols)
             {
-                var existing = await repo.GetBySymbolAsync(symbol);
+                var existing = await repo.GetBySymbolAndCurrencyAsync(symbol, currency);
                 if (existing is null || !existing.IsActive) continue;
 
                 await DeactivateSymbolAsync(existing, repo);
@@ -97,8 +105,9 @@ public class SymbolWatchlistService(IServiceScopeFactory scopeFactory, ILogger<S
         {
             using var scope = scopeFactory.CreateScope();
             var repo = scope.ServiceProvider.GetRequiredService<ISymbolWatchlistRepository>();
+            var currency = appConfig.CurrentValue.TradeCurrency;
 
-            var allEntries = await repo.GetActiveSymbolsAsync();
+            var allEntries = await repo.GetActiveSymbolsAsync(currency);
             var newSymbolSet = symbols.ToHashSet();
 
             foreach (var entry in allEntries)
@@ -120,9 +129,12 @@ public class SymbolWatchlistService(IServiceScopeFactory scopeFactory, ILogger<S
     {
         using var scope = scopeFactory.CreateScope();
         var repo = scope.ServiceProvider.GetRequiredService<ISymbolWatchlistRepository>();
-        var entries = await repo.GetActiveSymbolsAsync();
+        
+        var currency = appConfig.CurrentValue.TradeCurrency;
+        var entries = await repo.GetActiveSymbolsAsync(currency);
+        
         _cachedSymbols = entries.Select(e => e.Symbol).ToArray();
-        logger.LogInformation("Loaded {Count} active symbols from database", _cachedSymbols.Length);
+        logger.LogInformation("Loaded {Count} active symbols for currency {Currency} from database", _cachedSymbols.Length, currency);
     }
 
     private void RaiseSymbolsChanged() { WatchlistChanged?.Invoke(this, new WatchlistChangedEventArgs { Symbols = _cachedSymbols }); }

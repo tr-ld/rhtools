@@ -23,8 +23,12 @@ public class RhDbContext(DbContextOptions<RhDbContext> options) : DbContext(opti
         // SymbolWatchlistEntry configuration
         modelBuilder.Entity<SymbolWatchlistEntry>(entity =>
         {
-            entity.HasIndex(e => e.Symbol).IsUnique();
+            entity.HasIndex(e => new { e.Symbol, e.Currency }).IsUnique();
             entity.HasIndex(e => e.IsActive);
+            
+            entity.Property(e => e.Currency).HasDefaultValue("USD");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("DATETIME('now')");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("DATETIME('now')");
         });
     }
 }

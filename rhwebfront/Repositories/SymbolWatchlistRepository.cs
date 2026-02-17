@@ -6,11 +6,17 @@ namespace RHWebFront.Repositories;
 
 public class SymbolWatchlistRepository(RhDbContext context) : ISymbolWatchlistRepository
 {
-    public async Task<List<SymbolWatchlistEntry>> GetActiveSymbolsAsync(CancellationToken ct = default)
-    { return await context.SymbolWatchlist.Where(s => s.IsActive).OrderBy(s => s.Symbol).ToListAsync(ct); }
+    public async Task<List<SymbolWatchlistEntry>> GetActiveSymbolsAsync(string currency = null, CancellationToken ct = default)
+    {
+        var query = context.SymbolWatchlist.Where(s => s.IsActive);
+        
+        if (!string.IsNullOrEmpty(currency)) query = query.Where(s => s.Currency == currency);
+        
+        return await query.OrderBy(s => s.Symbol).ToListAsync(ct);
+    }
 
-    public async Task<SymbolWatchlistEntry> GetBySymbolAsync(string symbol, CancellationToken ct = default)
-    { return await context.SymbolWatchlist.FirstOrDefaultAsync(s => s.Symbol == symbol, ct); }
+    public async Task<SymbolWatchlistEntry> GetBySymbolAndCurrencyAsync(string symbol, string currency, CancellationToken ct = default)
+    { return await context.SymbolWatchlist.FirstOrDefaultAsync(s => s.Symbol == symbol && s.Currency == currency, ct); }
 
     public async Task AddAsync(SymbolWatchlistEntry entry, CancellationToken ct = default)
     {

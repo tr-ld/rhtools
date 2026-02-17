@@ -16,9 +16,6 @@ public class BidAskHistoryEntry
     public decimal Price { get; set; }
 
     [Column(TypeName = "decimal(38,18)")]
-    public decimal Quantity { get; set; }
-
-    [Column(TypeName = "decimal(38,18)")]
     public decimal SellSpread { get; set; }
 
     [Column(TypeName = "decimal(38,18)")]

@@ -130,7 +130,6 @@ public class BidAskPollingService : BackgroundService
             {
                 Symbol = bidAsk.Symbol,
                 Price = bidAsk.Price,
-                Quantity = bidAsk.Quantity,
                 SellSpread = bidAsk.SellSpread,
                 BuySpread = bidAsk.BuySpread,
                 Timestamp = bidAsk.Timestamp
