@@ -33,7 +33,7 @@ public class BidAskPollingService : BackgroundService
         _logger = logger;
         _appConfig = appConfig;
 
-        _watchlistService.WatchlistChanged += OnSymbolsChanged;
+        _watchlistService.WatchlistChanged += OnWatchlistChanged;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -140,7 +140,7 @@ public class BidAskPollingService : BackgroundService
         return historyEntries;
     }
 
-    private async void OnSymbolsChanged(object sender, WatchlistChangedEventArgs e)
+    private async void OnWatchlistChanged(object sender, WatchlistChangedEventArgs e)
     {
         _logger.LogInformation("Symbol list changed - restarting polling loop");
         await StartPollingLoopAsync(_loopCts?.Token ?? CancellationToken.None);
@@ -148,7 +148,7 @@ public class BidAskPollingService : BackgroundService
 
     public override void Dispose()
     {
-        _watchlistService.WatchlistChanged -= OnSymbolsChanged;
+        _watchlistService.WatchlistChanged -= OnWatchlistChanged;
         _timer?.Dispose();
         _loopCts?.Dispose();
         _restartLock.Dispose();
