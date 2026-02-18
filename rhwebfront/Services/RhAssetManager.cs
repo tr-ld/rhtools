@@ -7,10 +7,11 @@ using RHWebFront.Models;
 
 namespace RHWebFront.Services
 {
-    public class RhAssetManager(IRhApiClient apiClient, ILogger<RhAssetManager> logger, IMemoryCache cache, IOptionsSnapshot<AppConfig> appConfig) : IRhAssetManager
+    public class RhAssetManager(IRhApiClient apiClient, ILogger<RhAssetManager> logger, IMemoryCache cache, IOptionsSnapshot<AppConfig> appConfig, IOptionsSnapshot<CacheConfig> cacheConfig) : IRhAssetManager
     {
         private readonly string _instanceId = Guid.NewGuid().ToString()[..8];
         private readonly AppConfig _appConfig = appConfig.Value;
+        private readonly CacheConfig _cacheConfig = cacheConfig.Value;
 
         #region Account
         private readonly SemaphoreSlim _acctLock = new(1, 1);
@@ -34,7 +35,6 @@ namespace RHWebFront.Services
         #endregion
 
         #region Holdings
-        private const int HOLDINGS_CACHE_SECONDS = 60;
         private readonly SemaphoreSlim _holdingsLock = new(1, 1);
 
         public async Task<RHHolding[]> GetHoldings(string[] symbols = null)
@@ -50,7 +50,7 @@ namespace RHWebFront.Services
                 var results = await apiClient.GetHoldings(symbols);
                 var sorted = results.OrderBy(h => h.AssetCode).ToArray();
 
-                cache.Set(key, sorted, TimeSpan.FromSeconds(HOLDINGS_CACHE_SECONDS));
+                cache.Set(key, sorted, TimeSpan.FromSeconds(_cacheConfig.HoldingsCacheSeconds));
 
                 return sorted;
             }
@@ -89,7 +89,6 @@ namespace RHWebFront.Services
         #endregion
 
         #region Trading Pairs
-        private const int TRADING_PAIRS_CACHE_HOURS = 6;
         private readonly SemaphoreSlim _tradingPairsLock = new(1, 1);
 
         public async Task<RHTradingPair[]> GetTradingPairs()
@@ -102,8 +101,8 @@ namespace RHWebFront.Services
                 if (cache.TryGetValue(CacheKeys.TradingPairs, out cachedPairs)) return cachedPairs;
 
                 var pairs = await apiClient.GetTradingPairs();
-                cache.Set(CacheKeys.TradingPairs, pairs, TimeSpan.FromHours(TRADING_PAIRS_CACHE_HOURS));
-                logger.LogDebug("[{InstanceId}] Cached {Count} trading pairs for {Hours}h", _instanceId, pairs.Length, TRADING_PAIRS_CACHE_HOURS);
+                cache.Set(CacheKeys.TradingPairs, pairs, TimeSpan.FromHours(_cacheConfig.TradingPairsCacheHours));
+                logger.LogDebug("[{InstanceId}] Cached {Count} trading pairs for {Hours}h", _instanceId, pairs.Length, _cacheConfig.TradingPairsCacheHours);
 
                 return pairs;
             }
@@ -120,7 +119,6 @@ namespace RHWebFront.Services
         #endregion
 
         #region BidAsk
-        private const int BIDASK_CACHE_SECONDS = 10;
         private readonly SemaphoreSlim _bidAskLock = new(1, 1);
 
         public async Task<RHBidAsk[]> GetBestBidAsk(IDictionary<string, string[]> symbols)
@@ -137,7 +135,7 @@ namespace RHWebFront.Services
                 if (cache.TryGetValue(cacheKey, out cachedBidAsks)) return cachedBidAsks;
 
                 var results = await apiClient.GetBestBidAsk(transformedSymbols);
-                cache.Set(cacheKey, results, TimeSpan.FromSeconds(BIDASK_CACHE_SECONDS));
+                cache.Set(cacheKey, results, TimeSpan.FromSeconds(_cacheConfig.BidAskCacheSeconds));
 
                 return results;
             }
@@ -146,7 +144,6 @@ namespace RHWebFront.Services
         #endregion
 
         #region Orders
-        private const int ORDERS_CACHE_SECONDS = 60;
         private readonly SemaphoreSlim _ordersLock = new(1, 1);
 
         public async Task<RHOrder[]> GetOpenOrders()
@@ -171,8 +168,8 @@ namespace RHWebFront.Services
                 if (cache.TryGetValue(CacheKeys.AllOrders, out cachedOrders)) return cachedOrders;
 
                 var results = await GetOrders(null);
-                cache.Set(CacheKeys.AllOrders, results, TimeSpan.FromSeconds(ORDERS_CACHE_SECONDS));
-                logger.LogDebug("[{InstanceId}] Cached {Count} orders in IMemoryCache for {Seconds}s", _instanceId, results.Length, ORDERS_CACHE_SECONDS);
+                cache.Set(CacheKeys.AllOrders, results, TimeSpan.FromSeconds(_cacheConfig.OrdersCacheSeconds));
+                logger.LogDebug("[{InstanceId}] Cached {Count} orders in IMemoryCache for {Seconds}s", _instanceId, results.Length, _cacheConfig.OrdersCacheSeconds);
 
                 return results;
             }

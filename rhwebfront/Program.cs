@@ -101,8 +101,20 @@ namespace RHWebFront
 
             private void LoadConfig()
             {
-                builder.Services.Configure<AppConfig>(builder.Configuration.GetSection("AppConfig"));
-                builder.Services.Configure<RulesConfig>(builder.Configuration.GetSection("Rules"));
+                builder.Services.AddOptions<AppConfig>()
+                    .Bind(builder.Configuration.GetSection("AppConfig"))
+                    .ValidateDataAnnotations()
+                    .ValidateOnStart();
+                    
+                builder.Services.AddOptions<RulesConfig>()
+                    .Bind(builder.Configuration.GetSection("Rules"))
+                    .ValidateDataAnnotations()
+                    .ValidateOnStart();
+                    
+                builder.Services.AddOptions<CacheConfig>()
+                    .Bind(builder.Configuration.GetSection("CacheConfig"))
+                    .ValidateDataAnnotations()
+                    .ValidateOnStart();
             }
         }
     }
