@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
-using rhapi.Enums;
 using rhdata;
 using RHWebFront.Config;
+using RHWebFront.Constants;
 using RHWebFront.Models;
 
 namespace RHWebFront.Services
@@ -12,38 +12,24 @@ namespace RHWebFront.Services
         private readonly string _instanceId = Guid.NewGuid().ToString()[..8];
         private readonly AppConfig _appConfig = appConfig.Value;
 
-        #region Cache Keys
-        private const string ACCOUNT_CACHE_KEY = "Account";
-        private const string HOLDINGS_CACHE_KEY_PREFIX = "Holdings_";
-        private const string ASSETS_CACHE_KEY = "Assets";
-        private const string ORDERS_CACHE_KEY = "AllOrders";
-        private const string TRADING_PAIRS_CACHE_KEY = "TradingPairs";
-        #endregion
-
         #region Account
         private readonly SemaphoreSlim _acctLock = new(1, 1);
 
         public async Task<RHAccount> GetAccount()
         {
-            if (cache.TryGetValue(ACCOUNT_CACHE_KEY, out RHAccount cachedAccount)) return cachedAccount;
+            if (cache.TryGetValue(CacheKeys.Account, out RHAccount cachedAccount)) return cachedAccount;
 
             await _acctLock.WaitAsync();
             try
             {
-                if (cache.TryGetValue(ACCOUNT_CACHE_KEY, out cachedAccount)) return cachedAccount;
+                if (cache.TryGetValue(CacheKeys.Account, out cachedAccount)) return cachedAccount;
 
                 var account = await apiClient.GetAcct();
-                cache.Set(ACCOUNT_CACHE_KEY, account, new MemoryCacheEntryOptions { Priority = CacheItemPriority.NeverRemove });
+                cache.Set(CacheKeys.Account, account, new MemoryCacheEntryOptions { Priority = CacheItemPriority.NeverRemove });
                 
                 return account;
             }
             finally { _acctLock.Release(); }
-        }
-
-        public void InvalidateAccountCache()
-        {
-            cache.Remove(ACCOUNT_CACHE_KEY);
-            logger.LogDebug("[{InstanceId}] Account cache invalidated", _instanceId);
         }
         #endregion
 
@@ -53,7 +39,7 @@ namespace RHWebFront.Services
 
         public async Task<RHHolding[]> GetHoldings(string[] symbols = null)
         {
-            var key = GetHoldingsCacheKey(symbols);
+            var key = CacheKeys.Holdings(symbols);
             if (cache.TryGetValue(key, out RHHolding[] cachedHoldings)) return cachedHoldings;
 
             await _holdingsLock.WaitAsync();
@@ -70,43 +56,15 @@ namespace RHWebFront.Services
             }
             finally { _holdingsLock.Release(); }
         }
-
-        private static string GetHoldingsCacheKey(string[] symbols)
-        {
-            var symbolKey = symbols.CoalesceToAll();
-            return $"{HOLDINGS_CACHE_KEY_PREFIX}{symbolKey}";
-        }
-
-        public void InvalidateHoldingsCache()
-        {
-            cache.Remove(GetHoldingsCacheKey(null));
-            logger.LogDebug("[{InstanceId}] Holdings cache invalidated", _instanceId);
-        }
         #endregion
 
         #region Assets
-        private readonly SemaphoreSlim _assetsLock = new(1, 1);
-
         public async Task<IReadOnlyList<RHAssetSnapshot>> GetAssets()
         {
-            if (cache.TryGetValue(ASSETS_CACHE_KEY, out List<RHAssetSnapshot> cachedAssets)) return cachedAssets.AsReadOnly();
-
-            await _assetsLock.WaitAsync();
-            try
-            {
-                if (cache.TryGetValue(ASSETS_CACHE_KEY, out cachedAssets)) return cachedAssets.AsReadOnly();
-
-                var assets = await SeedAssetsFromHoldings();
-                cache.Set(ASSETS_CACHE_KEY, assets, new MemoryCacheEntryOptions { Priority = CacheItemPriority.Normal });
-                logger.LogDebug("[{InstanceId}] Asset snapshots populated with {Count} assets", _instanceId, assets.Count);
-
-                return assets.AsReadOnly();
-            }
-            finally { _assetsLock.Release(); }
+            var assets = await BuildAssetsFromSymbols();
+            return assets.AsReadOnly();
         }
 
-        private Task<List<RHAssetSnapshot>> SeedAssetsFromHoldings() { return BuildAssetsFromSymbols(); }
-        
         private async Task<List<RHAssetSnapshot>> BuildAssetsFromSymbols(string[] seed = null)
         {
             var holdings = await GetHoldings(seed);
@@ -136,15 +94,15 @@ namespace RHWebFront.Services
 
         public async Task<RHTradingPair[]> GetTradingPairs()
         {
-            if (cache.TryGetValue(TRADING_PAIRS_CACHE_KEY, out RHTradingPair[] cachedPairs)) return cachedPairs;
+            if (cache.TryGetValue(CacheKeys.TradingPairs, out RHTradingPair[] cachedPairs)) return cachedPairs;
 
             await _tradingPairsLock.WaitAsync();
             try
             {
-                if (cache.TryGetValue(TRADING_PAIRS_CACHE_KEY, out cachedPairs)) return cachedPairs;
+                if (cache.TryGetValue(CacheKeys.TradingPairs, out cachedPairs)) return cachedPairs;
 
                 var pairs = await apiClient.GetTradingPairs();
-                cache.Set(TRADING_PAIRS_CACHE_KEY, pairs, TimeSpan.FromHours(TRADING_PAIRS_CACHE_HOURS));
+                cache.Set(CacheKeys.TradingPairs, pairs, TimeSpan.FromHours(TRADING_PAIRS_CACHE_HOURS));
                 logger.LogDebug("[{InstanceId}] Cached {Count} trading pairs for {Hours}h", _instanceId, pairs.Length, TRADING_PAIRS_CACHE_HOURS);
 
                 return pairs;
@@ -162,10 +120,28 @@ namespace RHWebFront.Services
         #endregion
 
         #region BidAsk
+        private const int BIDASK_CACHE_SECONDS = 10;
+        private readonly SemaphoreSlim _bidAskLock = new(1, 1);
+
         public async Task<RHBidAsk[]> GetBestBidAsk(IDictionary<string, string[]> symbols)
         {
             var transformedSymbols = AppendCurrencyToValues(symbols);
-            return await apiClient.GetBestBidAsk(transformedSymbols);
+            var symbolList = transformedSymbols?["symbol"];
+            var cacheKey = CacheKeys.Holdings(symbolList);
+
+            if (cache.TryGetValue(cacheKey, out RHBidAsk[] cachedBidAsks)) return cachedBidAsks;
+
+            await _bidAskLock.WaitAsync();
+            try
+            {
+                if (cache.TryGetValue(cacheKey, out cachedBidAsks)) return cachedBidAsks;
+
+                var results = await apiClient.GetBestBidAsk(transformedSymbols);
+                cache.Set(cacheKey, results, TimeSpan.FromSeconds(BIDASK_CACHE_SECONDS));
+
+                return results;
+            }
+            finally { _bidAskLock.Release(); }
         }
         #endregion
 
@@ -187,15 +163,15 @@ namespace RHWebFront.Services
 
         public async Task<RHOrder[]> GetAllOrders()
         {
-            if (cache.TryGetValue(ORDERS_CACHE_KEY, out RHOrder[] cachedOrders)) return cachedOrders;
+            if (cache.TryGetValue(CacheKeys.AllOrders, out RHOrder[] cachedOrders)) return cachedOrders;
 
             await _ordersLock.WaitAsync();
             try
             {
-                if (cache.TryGetValue(ORDERS_CACHE_KEY, out cachedOrders)) return cachedOrders;
+                if (cache.TryGetValue(CacheKeys.AllOrders, out cachedOrders)) return cachedOrders;
 
                 var results = await GetOrders(null);
-                cache.Set(ORDERS_CACHE_KEY, results, TimeSpan.FromSeconds(ORDERS_CACHE_SECONDS));
+                cache.Set(CacheKeys.AllOrders, results, TimeSpan.FromSeconds(ORDERS_CACHE_SECONDS));
                 logger.LogDebug("[{InstanceId}] Cached {Count} orders in IMemoryCache for {Seconds}s", _instanceId, results.Length, ORDERS_CACHE_SECONDS);
 
                 return results;
@@ -208,11 +184,40 @@ namespace RHWebFront.Services
             var parameters = queryParams is null || queryParams.Count == 0 ? new Dictionary<string, string[]>() : queryParams;
             return await apiClient.GetOrders(parameters);
         }
+        #endregion
+
+        #region Cache Invalidation
+        public void InvalidateAccountCache()
+        {
+            cache.Remove(CacheKeys.Account);
+            logger.LogDebug("[{InstanceId}] Account cache invalidated", _instanceId);
+        }
+
+        public void InvalidateHoldingsCache()
+        {
+            cache.Remove(CacheKeys.Holdings(null));
+            logger.LogDebug("[{InstanceId}] Holdings cache invalidated", _instanceId);
+        }
+
+        public void InvalidateBidAskCache()
+        {
+            cache.Remove(CacheKeys.Holdings(null));
+            logger.LogDebug("[{InstanceId}] BidAsk cache invalidated", _instanceId);
+        }
 
         public void InvalidateOrdersCache()
         {
-            cache.Remove(ORDERS_CACHE_KEY);
+            cache.Remove(CacheKeys.AllOrders);
             logger.LogDebug("[{InstanceId}] Orders cache invalidated from IMemoryCache", _instanceId);
+        }
+
+        public void InvalidateAllCaches()
+        {
+            InvalidateAccountCache();
+            InvalidateHoldingsCache();
+            InvalidateBidAskCache();
+            InvalidateOrdersCache();
+            logger.LogInformation("[{InstanceId}] All caches invalidated", _instanceId);
         }
         #endregion
 
@@ -228,22 +233,10 @@ namespace RHWebFront.Services
             return transformed;
         }
         #endregion
-
-        public void InvalidateAllCaches()
-        {
-            InvalidateAccountCache();
-            InvalidateHoldingsCache();
-            InvalidateOrdersCache();
-            cache.Remove(ASSETS_CACHE_KEY);
-            logger.LogInformation("[{InstanceId}] All caches invalidated", _instanceId);
-        }
     }
 
     internal static class AssetManagerExtensions
     {
-        internal static string CoalesceToAll(this string[] symbols)
-        { return (symbols == null || symbols.Length == 0) ? "__all" : string.Join(',', symbols.OrderBy(s => s, StringComparer.OrdinalIgnoreCase)); }
-
         /// <summary>
         /// Extracts the base symbol from a compound symbol (e.g., "BTC" from "BTC-USD")
         /// </summary>
