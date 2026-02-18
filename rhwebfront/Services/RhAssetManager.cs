@@ -17,6 +17,7 @@ namespace RHWebFront.Services
         private const string HOLDINGS_CACHE_KEY_PREFIX = "Holdings_";
         private const string ASSETS_CACHE_KEY = "Assets";
         private const string ORDERS_CACHE_KEY = "AllOrders";
+        private const string TRADING_PAIRS_CACHE_KEY = "TradingPairs";
         #endregion
 
         #region Account
@@ -126,6 +127,29 @@ namespace RHWebFront.Services
             }
 
             return snapshots;
+        }
+        #endregion
+
+        #region Trading Pairs
+        private const int TRADING_PAIRS_CACHE_HOURS = 6;
+        private readonly SemaphoreSlim _tradingPairsLock = new(1, 1);
+
+        public async Task<RHTradingPair[]> GetTradingPairs()
+        {
+            if (cache.TryGetValue(TRADING_PAIRS_CACHE_KEY, out RHTradingPair[] cachedPairs)) return cachedPairs;
+
+            await _tradingPairsLock.WaitAsync();
+            try
+            {
+                if (cache.TryGetValue(TRADING_PAIRS_CACHE_KEY, out cachedPairs)) return cachedPairs;
+
+                var pairs = await apiClient.GetTradingPairs();
+                cache.Set(TRADING_PAIRS_CACHE_KEY, pairs, TimeSpan.FromHours(TRADING_PAIRS_CACHE_HOURS));
+                logger.LogDebug("[{InstanceId}] Cached {Count} trading pairs for {Hours}h", _instanceId, pairs.Length, TRADING_PAIRS_CACHE_HOURS);
+
+                return pairs;
+            }
+            finally { _tradingPairsLock.Release(); }
         }
         #endregion
 

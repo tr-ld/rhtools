@@ -1,0 +1,42 @@
+.symbol-selector-section {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.symbol-selector-section label {
+    font-weight: 600;
+}
+
+.symbol-selector-section select {
+    padding: 0.5rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color, #ccc);
+}
+
+.validation-error {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    background-color: var(--error-bg, #fee);
+    color: var(--error-color, #c00);
+    border-radius: 4px;
+    border-left: 4px solid var(--error-color, #c00);
+}
+
+.rules-section {
+    padding: 1.5rem;
+    border: 1px solid var(--border-color, #ccc);
+    border-radius: 4px;
+    background-color: var(--card-bg, #fff);
+}
+
+.rules-section.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.rules-section h4 {
+    margin-top: 0;
+}

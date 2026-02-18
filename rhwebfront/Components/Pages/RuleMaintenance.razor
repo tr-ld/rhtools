@@ -1,10 +1,121 @@
 ﻿@page "/rules"
 @rendermode InteractiveServer
+@using RHWebFront.Services
+@using RHWebFront.Config
+@using Microsoft.Extensions.Options
+@using rhdata
+@inject IRhAssetManager Manager
+@inject NavigationManager Navigation
+@inject IOptionsSnapshot<AppConfig> AppConfig
 
-<h3>Rules Maintenance</h3>
+<h3>Rule Maintenance</h3>
 
-<div style="background-color: fuchsia">thing</div>
+<div class="symbol-selector-section">
+    <label for="symbol-select">Symbol:</label>
+    @if (_tradingPairs is null)
+    {
+        <p>Loading trading pairs...</p>
+    }
+    else
+    {
+        <select id="symbol-select" @bind="_selectedAssetCode" @bind:after="OnSymbolSelected">
+            <option value="">-- Select a symbol --</option>
+            @foreach (var pair in _tradingPairs.OrderBy(p => p.AssetCode))
+            {
+                <option value="@pair.AssetCode">@pair.AssetCode</option>
+            }
+        </select>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(_validationError))
+{
+    <div class="validation-error">@_validationError</div>
+}
+
+@if (!string.IsNullOrEmpty(_validatedSymbol))
+{
+    <div class="rules-section">
+        <h4>Rules for @_validatedSymbol</h4>
+        <p>Trigger and action configuration placeholder</p>
+    </div>
+}
+else
+{
+    <div class="rules-section disabled">
+        <p>Select a symbol to manage rules</p>
+    </div>
+}
 
 @code {
+    private RHTradingPair[] _tradingPairs;
+    private string _selectedAssetCode = "";
+    private string _validatedSymbol = null;
+    private string _validationError = null;
 
+    protected override async Task OnInitializedAsync()
+    {
+        _tradingPairs = await Manager.GetTradingPairs();
+        
+        var uri = new Uri(Navigation.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var passedAssetCode = query["assetCode"];
+        var passedSymbol = query["symbol"];
+
+        if (!string.IsNullOrEmpty(passedSymbol))
+        {
+            if (ValidateAndSetSymbol(passedSymbol, out var assetCode))
+            {
+                _selectedAssetCode = assetCode;
+                _validatedSymbol = passedSymbol;
+            }
+            else
+            {
+                _validationError = $"The symbol '{passedSymbol}' is not valid. Please select from the list.";
+            }
+        }
+        else if (!string.IsNullOrEmpty(passedAssetCode))
+        {
+            var constructedSymbol = $"{passedAssetCode}-{AppConfig.Value.TradeCurrency}";
+            if (ValidateAndSetSymbol(constructedSymbol, out var assetCode))
+            {
+                _selectedAssetCode = assetCode;
+                _validatedSymbol = constructedSymbol;
+                Navigation.NavigateTo($"/rules?symbol={constructedSymbol}", replace: true);
+            }
+            else
+            {
+                _validationError = $"The symbol '{constructedSymbol}' is not valid. Please select from the list.";
+            }
+        }
+    }
+
+    private bool ValidateAndSetSymbol(string symbol, out string assetCode)
+    {
+        assetCode = null;
+        var pair = _tradingPairs.FirstOrDefault(p => p.Symbol == symbol);
+        if (pair is null) return false;
+        
+        assetCode = pair.AssetCode;
+        return true;
+    }
+
+    private void OnSymbolSelected()
+    {
+        _validationError = null;
+        
+        if (string.IsNullOrEmpty(_selectedAssetCode))
+        {
+            _validatedSymbol = null;
+            Navigation.NavigateTo("/rules", replace: true);
+            return;
+        }
+
+        var symbol = $"{_selectedAssetCode}-{AppConfig.Value.TradeCurrency}";
+        if (ValidateAndSetSymbol(symbol, out _))
+        {
+            _validatedSymbol = symbol;
+            Navigation.NavigateTo($"/rules?symbol={symbol}", replace: true);
+        }
+    }
 }
