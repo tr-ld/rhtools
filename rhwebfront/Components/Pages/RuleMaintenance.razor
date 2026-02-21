@@ -206,17 +206,18 @@ else
     private void SelectSymbolCard(RHTradingPair pair)
     {
         _validationError = null;
-        
+
         if (_selectedSymbol == pair.Symbol)
         {
             _showSymbolSelector = false;
             _showAll = false;
             return;
         }
-        
+
         _selectedSymbol = pair.Symbol;
         _showAll = false;
         _showSymbolSelector = false;
+        _searchTerm = string.Empty;
         Navigation.NavigateTo($"/rules?symbol={pair.Symbol}", replace: true);
     }
 
