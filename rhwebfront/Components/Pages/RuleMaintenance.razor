@@ -2,120 +2,231 @@
 @rendermode InteractiveServer
 @using RHWebFront.Services
 @using RHWebFront.Config
+@using RHWebFront.Extensions
 @using Microsoft.Extensions.Options
 @using rhdata
 @inject IRhAssetManager Manager
 @inject NavigationManager Navigation
 @inject IOptionsSnapshot<AppConfig> AppConfig
 
-<h3>Rule Maintenance</h3>
-
-<div class="symbol-selector-section">
-    <label for="symbol-select">Symbol:</label>
-    @if (_tradingPairs is null)
-    {
-        <p>Loading trading pairs...</p>
-    }
-    else
-    {
-        <select id="symbol-select" @bind="_selectedAssetCode" @bind:after="OnSymbolSelected">
-            <option value="">-- Select a symbol --</option>
-            @foreach (var pair in _tradingPairs.OrderBy(p => p.AssetCode))
-            {
-                <option value="@pair.AssetCode">@pair.AssetCode</option>
-            }
-        </select>
-    }
+<div class="page-header">
+    <h3>@(!string.IsNullOrEmpty(_selectedSymbol) ? $"{_selectedSymbol} Rules" : "Symbol Rules")</h3>
+    <button class="change-symbol-btn" @onclick="ShowSymbolSelector" title="Change symbol" disabled="@(string.IsNullOrEmpty(_selectedSymbol))">
+        <img src="/icons/crypto-symbol.svg" alt="Change symbol" class="crypto-icon" />
+    </button>
 </div>
+
+@if (_showSymbolSelector)
+{
+    <div class="symbol-selector-container">
+        <div class="search-section">
+            <input type="text" class="symbol-search" placeholder="Search symbols..." @bind="_searchTerm" @bind:event="oninput" />
+            @if (!string.IsNullOrEmpty(_searchTerm))
+            {
+                <button class="clear-search" @onclick="ClearSearch">✕</button>
+            }
+        </div>
+
+        @if (_tradingPairs is null)
+        {
+            <div class="loading-state">
+                <p>Loading trading pairs...</p>
+            </div>
+        }
+        else
+        {
+            @if (_symbolsWithRules.Count > 0 && string.IsNullOrWhiteSpace(_searchTerm))
+            {
+                <div class="symbols-with-rules-section">
+                    <h4 class="section-title">Symbols with Rules</h4>
+                    <div class="symbol-grid">
+                        @foreach (var pair in TradingPairsWithRules)
+                        {
+                            var isSelected = _selectedSymbol == pair.Symbol;
+                            
+                            <div class="symbol-card @(isSelected ? "selected" : "")" @onclick="() => SelectSymbolCard(pair)">
+                                <span class="asset-code">@pair.AssetCode</span>
+                                @if (isSelected) { <span class="selected-indicator">✓</span> }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="symbol-grid">
+                @foreach (var pair in DisplayedPairs)
+                {
+                    var isSelected = _selectedSymbol == pair.Symbol;
+                    
+                    <div class="symbol-card @(isSelected ? "selected" : "")" @onclick="() => SelectSymbolCard(pair)">
+                        <span class="asset-code">@pair.AssetCode</span>
+                        @if (isSelected) { <span class="selected-indicator">✓</span> }
+                    </div>
+                }
+                
+                @if (!_showAll && string.IsNullOrWhiteSpace(_searchTerm) && FilteredPairs.Count() > DisplayedPairs.Count)
+                {
+                    <div class="symbol-card show-all-card" @onclick="ShowAllSymbols">
+                        <span class="asset-code">...</span>
+                    </div>
+                }
+            </div>
+
+            @if (!FilteredPairs.Any())
+            {
+                <div class="no-results">
+                    <p>No symbols match "@_searchTerm"</p>
+                </div>
+            }
+        }
+    </div>
+}
 
 @if (!string.IsNullOrEmpty(_validationError))
 {
     <div class="validation-error">@_validationError</div>
 }
 
-@if (!string.IsNullOrEmpty(_validatedSymbol))
+@if (!string.IsNullOrEmpty(_selectedSymbol))
 {
     <div class="rules-section">
-        <h4>Rules for @_validatedSymbol</h4>
+        <h4>Rules for @_selectedSymbol</h4>
         <p>Trigger and action configuration placeholder</p>
     </div>
 }
 else
 {
     <div class="rules-section disabled">
-        <p>Select a symbol to manage rules</p>
+        <p>Select a symbol above to manage rules</p>
     </div>
 }
 
 @code {
-    private RHTradingPair[] _tradingPairs;
-    private string _selectedAssetCode = "";
-    private string _validatedSymbol = null;
+    [SupplyParameterFromQuery(Name = "symbol")]
+    private string? QuerySymbol { get; set; }
+    
+    [SupplyParameterFromQuery(Name = "assetCode")]
+    private string? QueryAssetCode { get; set; }
+
+    private List<RHTradingPair> _tradingPairs;
+    private string _selectedSymbol = null;
+    private string _resolvedSymbol = null; // Symbol resolved from parameters, pending validation
     private string _validationError = null;
+    private string _searchTerm = "";
+    private bool _showAll = false;
+    private bool _showSymbolSelector = true;
+    private HashSet<string> _symbolsWithRules = new();
+
+    private IEnumerable<RHTradingPair> TradingPairsWithRules
+    {
+        get
+        {
+            if (_tradingPairs is null) return [];
+            return _tradingPairs.Where(p => _symbolsWithRules.Contains(p.Symbol)).OrderBy(p => p.AssetCode);
+        }
+    }
+
+    private IEnumerable<RHTradingPair> FilteredPairs
+    {
+        get
+        {
+            if (_tradingPairs is null) return [];
+            
+            return string.IsNullOrWhiteSpace(_searchTerm) 
+                ? _tradingPairs.Where(p => !_symbolsWithRules.Contains(p.Symbol)).OrderBy(p => p.AssetCode) 
+                : _tradingPairs.Where(p => p.AssetCode.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) 
+                    || p.Symbol.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)).OrderBy(p => p.AssetCode);
+        }
+    }
+
+    private List<RHTradingPair> DisplayedPairs
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(_searchTerm)) return FilteredPairs.ToList();
+            
+            var pairs = new List<RHTradingPair>();
+            
+            if (!string.IsNullOrEmpty(_selectedSymbol))
+            {
+                var selectedPair = FilteredPairs.FirstOrDefault(p => p.Symbol == _selectedSymbol);
+                if (selectedPair != null) pairs.Add(selectedPair);
+            }
+            
+            var remaining = FilteredPairs.Where(p => p.Symbol != _selectedSymbol);
+            pairs.AddRange(_showAll ? remaining : remaining.Take(20));
+            
+            return pairs;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        _tradingPairs = await Manager.GetTradingPairs();
+        _tradingPairs = (await Manager.GetTradingPairs()).ForTradeCurrency(AppConfig.Value.TradeCurrency).ToList();
+        // TODO: Load symbols with existing rules from repository
         
-        var uri = new Uri(Navigation.Uri);
-        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-        var passedAssetCode = query["assetCode"];
-        var passedSymbol = query["symbol"];
-
-        if (!string.IsNullOrEmpty(passedSymbol))
-        {
-            if (ValidateAndSetSymbol(passedSymbol, out var assetCode))
-            {
-                _selectedAssetCode = assetCode;
-                _validatedSymbol = passedSymbol;
-            }
-            else
-            {
-                _validationError = $"The symbol '{passedSymbol}' is not valid. Please select from the list.";
-            }
-        }
-        else if (!string.IsNullOrEmpty(passedAssetCode))
-        {
-            var constructedSymbol = $"{passedAssetCode}-{AppConfig.Value.TradeCurrency}";
-            if (ValidateAndSetSymbol(constructedSymbol, out var assetCode))
-            {
-                _selectedAssetCode = assetCode;
-                _validatedSymbol = constructedSymbol;
-                Navigation.NavigateTo($"/rules?symbol={constructedSymbol}", replace: true);
-            }
-            else
-            {
-                _validationError = $"The symbol '{constructedSymbol}' is not valid. Please select from the list.";
-            }
-        }
+        // Validate resolved symbol after data is loaded
+        ValidateResolvedSymbol();
     }
 
-    private bool ValidateAndSetSymbol(string symbol, out string assetCode)
+    protected override void OnParametersSet()
     {
-        assetCode = null;
-        var pair = _tradingPairs.FirstOrDefault(p => p.Symbol == symbol);
-        if (pair is null) return false;
+        // Construct/resolve the symbol from query parameters
+        if (!string.IsNullOrEmpty(QuerySymbol)) { _resolvedSymbol = QuerySymbol; }
+        else if (!string.IsNullOrEmpty(QueryAssetCode))
+        {
+            _resolvedSymbol = $"{QueryAssetCode}-{AppConfig.Value.TradeCurrency}";
+            Navigation.NavigateTo($"/rules?symbol={_resolvedSymbol}", replace: true);
+        }
+        else { _resolvedSymbol = null; }
         
-        assetCode = pair.AssetCode;
-        return true;
+        // If data is already loaded (subsequent parameter changes), validate immediately
+        if (_tradingPairs is not null) { ValidateResolvedSymbol(); }
     }
 
-    private void OnSymbolSelected()
+    private void ValidateResolvedSymbol()
+    {
+        if (string.IsNullOrEmpty(_resolvedSymbol)) { _selectedSymbol = null; _validationError = null; return; }
+
+        if (SymbolExists(_resolvedSymbol))
+        {
+            _selectedSymbol = _resolvedSymbol;
+            _showSymbolSelector = false;
+            _validationError = null;
+        }
+        else
+        {
+            _selectedSymbol = null;
+            _validationError = $"The symbol '{_resolvedSymbol}' was not found. Please select from the list.";
+        }
+    }
+
+    private bool SymbolExists(string symbol) => _tradingPairs?.Any(p => p.Symbol == symbol) ?? false;
+
+    private void SelectSymbolCard(RHTradingPair pair)
     {
         _validationError = null;
         
-        if (string.IsNullOrEmpty(_selectedAssetCode))
+        if (_selectedSymbol == pair.Symbol)
         {
-            _validatedSymbol = null;
-            Navigation.NavigateTo("/rules", replace: true);
+            _showSymbolSelector = false;
+            _showAll = false;
             return;
         }
+        
+        _selectedSymbol = pair.Symbol;
+        _showAll = false;
+        _showSymbolSelector = false;
+        Navigation.NavigateTo($"/rules?symbol={pair.Symbol}", replace: true);
+    }
 
-        var symbol = $"{_selectedAssetCode}-{AppConfig.Value.TradeCurrency}";
-        if (ValidateAndSetSymbol(symbol, out _))
-        {
-            _validatedSymbol = symbol;
-            Navigation.NavigateTo($"/rules?symbol={symbol}", replace: true);
-        }
+    private void ClearSearch() { _searchTerm = string.Empty; }
+
+    private void ShowAllSymbols() { _showAll = true; }
+
+    private void ShowSymbolSelector()
+    {
+        _showSymbolSelector = !_showSymbolSelector;
+        if (!_showSymbolSelector) { _showAll = false; }
     }
 }

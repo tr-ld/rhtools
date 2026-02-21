@@ -16,20 +16,139 @@
     border: 1px solid var(--border-color, #ccc);
 }
 
+.symbol-selector-container {
+    margin-bottom: 2rem;
+}
+
+.search-section {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.symbol-search {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    font-size: 1rem;
+    border: 2px solid var(--border-medium);
+    border-radius: 8px;
+    transition: border-color var(--theme-transition-duration) var(--theme-transition-easing);
+    background: white;
+    color: var(--surface-foreground);
+}
+
+.symbol-search:focus {
+    outline: none;
+    border-color: var(--blush-contrast);
+    box-shadow: var(--blush-focus-ring);
+}
+
+.clear-search {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+}
+
+.clear-search:hover {
+    color: var(--blush-contrast);
+}
+
+.loading-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--muted);
+}
+
+.symbols-with-rules-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-medium);
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--blush-foreground);
+    margin: 0 0 1rem 0;
+}
+
+.symbol-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.symbol-card {
+    background: var(--blush);
+    border: 2px solid var(--border-medium);
+    border-radius: 8px;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all var(--theme-transition-duration) var(--theme-transition-easing);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    min-height: 40px;
+}
+
+.symbol-card:hover {
+    border-color: var(--blush-contrast);
+    background: var(--blush-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.symbol-card.selected {
+    border-color: var(--blush-contrast);
+    background: var(--surface);
+    box-shadow: 0 0 0 1px var(--blush-contrast);
+}
+
+.asset-code {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--blush-foreground);
+}
+
+.selected-indicator {
+    color: var(--blush-contrast);
+    font-size: 0.875rem;
+    font-weight: bold;
+}
+
+.show-all-card {
+    /* Inherits all styles from .symbol-card */
+}
+
+.no-results {
+    text-align: center;
+    padding: 3rem;
+    color: var(--muted);
+}
+
 .validation-error {
     padding: 0.75rem;
     margin-bottom: 1rem;
-    background-color: var(--error-bg, #fee);
-    color: var(--error-color, #c00);
-    border-radius: 4px;
-    border-left: 4px solid var(--error-color, #c00);
+    background-color: var(--order-sell-bg);
+    color: var(--order-sell-fg);
+    border-radius: 8px;
+    border-left: 4px solid var(--order-sell-fg);
 }
 
 .rules-section {
     padding: 1.5rem;
-    border: 1px solid var(--border-color, #ccc);
-    border-radius: 4px;
-    background-color: var(--card-bg, #fff);
+    border: 2px solid var(--border-medium);
+    border-radius: 12px;
+    background-color: var(--surface);
 }
 
 .rules-section.disabled {
@@ -39,4 +158,53 @@
 
 .rules-section h4 {
     margin-top: 0;
+    color: var(--blush-foreground);
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.page-header h3 {
+    margin: 0;
+    color: var(--blush-foreground);
+}
+
+.crypto-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    display: block;
+}
+
+.change-symbol-btn {
+    background: var(--blush);
+    border: 2px solid var(--border-medium);
+    border-radius: 8px;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all var(--theme-transition-duration) var(--theme-transition-easing);
+    color: var(--blush-foreground);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.change-symbol-btn:hover {
+    background: var(--blush-hover);
+    border-color: var(--blush-contrast);
+    transform: scale(1.05);
+}
+
+.change-symbol-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.change-symbol-btn:disabled:hover {
+    background: var(--blush);
+    border-color: var(--border-medium);
+    transform: none;
 }
