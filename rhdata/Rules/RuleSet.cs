@@ -16,7 +16,6 @@ namespace rhdata.Rules
 
         public DateTimeOffset UpdatedAt { get; set; }
 
-        [NotMapped]
         public List<Rule> Rules { get; set; } = [];
     }
 }

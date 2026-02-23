@@ -78,6 +78,7 @@ namespace RHWebFront
                 // Repositories
                 svc.AddScoped<ISymbolWatchlistRepository, SymbolWatchlistRepository>();
                 svc.AddScoped<IBidAskHistoryRepository, BidAskHistoryRepository>();
+                svc.AddScoped<IRuleRepository, RuleRepository>();
 
                 // HTTP Client & Asset Manager
                 svc.AddHttpClient<IRhApiClient, RhApiClient>(client => //this suffices for registering RhApiClient - do not register separately
@@ -86,6 +87,7 @@ namespace RHWebFront
                     client.BaseAddress = new Uri(RhApiClient.BASE_URL);
                 });
                 svc.AddScoped<IRhAssetManager, RhAssetManager>();
+                svc.AddScoped<IRuleManager, RuleManager>();
 
                 // Singleton Services
                 svc.AddSingleton<ISymbolWatchlistService, SymbolWatchlistService>();

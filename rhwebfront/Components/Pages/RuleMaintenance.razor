@@ -5,7 +5,9 @@
 @using RHWebFront.Extensions
 @using Microsoft.Extensions.Options
 @using rhdata
-@inject IRhAssetManager Manager
+@using rhdata.Rules
+@inject IRhAssetManager AssetManager
+@inject IRuleManager RuleManager
 @inject NavigationManager Navigation
 @inject IOptionsSnapshot<AppConfig> AppConfig
 
@@ -35,7 +37,7 @@
         }
         else
         {
-            @if (_symbolsWithRules.Count > 0 && string.IsNullOrWhiteSpace(_searchTerm))
+            @if (_ruleSets is not null && _ruleSets.Count > 0 && string.IsNullOrWhiteSpace(_searchTerm))
             {
                 <div class="symbols-with-rules-section">
                     <h4 class="section-title">Symbols with Rules</h4>
@@ -103,26 +105,25 @@ else
 
 @code {
     [SupplyParameterFromQuery(Name = "symbol")]
-    private string? QuerySymbol { get; set; }
+    private string QuerySymbol { get; set; }
     
     [SupplyParameterFromQuery(Name = "assetCode")]
-    private string? QueryAssetCode { get; set; }
+    private string QueryAssetCode { get; set; }
 
     private List<RHTradingPair> _tradingPairs;
+    private List<RuleSet> _ruleSets;
     private string _selectedSymbol = null;
-    private string _resolvedSymbol = null; // Symbol resolved from parameters, pending validation
     private string _validationError = null;
     private string _searchTerm = "";
     private bool _showAll = false;
     private bool _showSymbolSelector = true;
-    private HashSet<string> _symbolsWithRules = new();
 
     private IEnumerable<RHTradingPair> TradingPairsWithRules
     {
         get
         {
-            if (_tradingPairs is null) return [];
-            return _tradingPairs.Where(p => _symbolsWithRules.Contains(p.Symbol)).OrderBy(p => p.AssetCode);
+            if (_tradingPairs is null || _ruleSets is null) return [];
+            return _tradingPairs.Where(p => _ruleSets.Any(rs => rs.Symbol == p.Symbol)).OrderBy(p => p.AssetCode);
         }
     }
 
@@ -130,12 +131,12 @@ else
     {
         get
         {
-            if (_tradingPairs is null) return [];
-            
-            return string.IsNullOrWhiteSpace(_searchTerm) 
-                ? _tradingPairs.Where(p => !_symbolsWithRules.Contains(p.Symbol)).OrderBy(p => p.AssetCode) 
-                : _tradingPairs.Where(p => p.AssetCode.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) 
-                    || p.Symbol.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)).OrderBy(p => p.AssetCode);
+            return _tradingPairs is null 
+                ? [] : string.IsNullOrWhiteSpace(_searchTerm)
+                ? (_ruleSets is null 
+                    ? _tradingPairs : _tradingPairs.Where(p => _ruleSets.All(rs => rs.Symbol != p.Symbol))).OrderBy(p => p.AssetCode) //no rules defined
+                    : _tradingPairs.Where(p => p.AssetCode.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) //matches asset code
+                        || p.Symbol.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)).OrderBy(p => p.AssetCode); //matches symbol
         }
     }
 
@@ -162,13 +163,12 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        _tradingPairs = (await Manager.GetTradingPairs()).ForTradeCurrency(AppConfig.Value.TradeCurrency).ToList();
-        // TODO: Load symbols with existing rules from repository
-        
-        // Validate resolved symbol after data is loaded
+        _tradingPairs = (await AssetManager.GetTradingPairs()).ForTradeCurrency(AppConfig.Value.TradeCurrency).ToList();
+        _ruleSets = await RuleManager.GetRuleSetsForTradeCurrencyAsync();
         ValidateResolvedSymbol();
     }
 
+    private string _resolvedSymbol = null;
     protected override void OnParametersSet()
     {
         // Construct/resolve the symbol from query parameters
