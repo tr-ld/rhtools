@@ -112,7 +112,7 @@ namespace RHWebFront
                 // Singleton Services
                 svc.AddSingleton<ISymbolWatchlistService, SymbolWatchlistService>();
                 svc.AddSingleton<IBidAskNotificationService, BidAskNotificationService>();
-                svc.AddScoped<ISelectedSymbolManagementService, SelectedSymbolManagementService>();
+                svc.AddScoped<ISelectedSymbolManager, SelectedSymbolManager>();
 
                 // Background Service
                 svc.AddHostedService<BidAskPollingService>();

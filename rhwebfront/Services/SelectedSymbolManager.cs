@@ -1,6 +1,6 @@
 namespace RHWebFront.Services;
 
-public class SelectedSymbolManagementService : ISelectedSymbolManagementService
+public class SelectedSymbolManager : ISelectedSymbolManager
 {
     public string SelectedSymbol { get; set; }
     public bool ShowSymbolSelector { get; set; } = true;

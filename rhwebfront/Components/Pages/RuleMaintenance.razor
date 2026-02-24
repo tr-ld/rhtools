@@ -10,7 +10,7 @@
 @inject IRuleManager RuleManager
 @inject NavigationManager Navigation
 @inject IOptionsSnapshot<AppConfig> AppConfig
-@inject ISelectedSymbolManagementService SymbolManager
+@inject ISelectedSymbolManager SymbolManager
 
 <div class="page-header">
     <h3>@(!string.IsNullOrEmpty(SymbolManager.SelectedSymbol) ? $"{SymbolManager.SelectedSymbol} Rules" : "Symbol Rules")</h3>
