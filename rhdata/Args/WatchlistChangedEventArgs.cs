@@ -1,4 +1,4 @@
-namespace RHWebFront.Models;
+namespace rhdata.Args;
 
 public class WatchlistChangedEventArgs : EventArgs
 {

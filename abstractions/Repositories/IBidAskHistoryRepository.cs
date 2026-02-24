@@ -1,6 +1,6 @@
 using rhdata;
 
-namespace RHWebFront.Repositories;
+namespace abstractions.Repositories;
 
 public interface IBidAskHistoryRepository
 {

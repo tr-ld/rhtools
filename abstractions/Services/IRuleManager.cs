@@ -1,6 +1,6 @@
 using rhdata.Rules;
 
-namespace RHWebFront.Services;
+namespace abstractions.Services;
 
 public interface IRuleManager
 {

@@ -1,9 +1,10 @@
+using abstractions.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using rhdata;
+using rhdata.Models;
 using RHWebFront.Config;
 using RHWebFront.Constants;
-using RHWebFront.Models;
 
 namespace RHWebFront.Services
 {

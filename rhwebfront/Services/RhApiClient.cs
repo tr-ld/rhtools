@@ -4,6 +4,7 @@ using rhdata;
 using System.Text;
 using rhapi.Endpoints;
 using System.Net;
+using abstractions.Services;
 
 namespace RHWebFront.Services
 {

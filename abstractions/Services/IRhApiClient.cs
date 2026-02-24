@@ -1,6 +1,6 @@
 ﻿using rhdata;
 
-namespace RHWebFront.Services
+namespace abstractions.Services
 {
     public interface IRhApiClient
     {

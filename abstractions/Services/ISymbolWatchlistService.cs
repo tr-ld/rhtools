@@ -1,6 +1,6 @@
-using RHWebFront.Models;
+using rhdata.Args;
 
-namespace RHWebFront.Services;
+namespace abstractions.Services;
 
 public interface ISymbolWatchlistService
 {

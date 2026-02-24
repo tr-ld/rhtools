@@ -1,6 +1,6 @@
 ﻿@page "/holdings"
-@using RHWebFront.Services
-@using RHWebFront.Models
+@using abstractions.Services
+@using rhdata.Models
 @inject IRhAssetManager manager
 
 @if (AssetSnapshots is null) { <p>Loading...</p> }

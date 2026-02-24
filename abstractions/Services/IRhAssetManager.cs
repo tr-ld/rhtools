@@ -1,7 +1,7 @@
 using rhdata;
-using RHWebFront.Models;
+using rhdata.Models;
 
-namespace RHWebFront.Services
+namespace abstractions.Services
 {
     public interface IRhAssetManager
     {

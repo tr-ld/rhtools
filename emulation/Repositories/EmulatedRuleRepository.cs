@@ -1,6 +1,7 @@
+using abstractions.Repositories;
 using rhdata.Rules;
 
-namespace RHWebFront.Repositories.Emulated;
+namespace emulation.Repositories;
 
 public class EmulatedRuleRepository : IRuleRepository
 {

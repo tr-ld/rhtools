@@ -1,6 +1,4 @@
-using rhdata;
-
-namespace RHWebFront.Models;
+namespace rhdata.Args;
 
 public class BidAskReceivedEventArgs : EventArgs
 {

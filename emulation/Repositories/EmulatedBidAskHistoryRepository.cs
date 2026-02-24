@@ -1,6 +1,7 @@
+using abstractions.Repositories;
 using rhdata;
 
-namespace RHWebFront.Repositories.Emulated;
+namespace emulation.Repositories;
 
 public class EmulatedBidAskHistoryRepository : IBidAskHistoryRepository
 {

@@ -1,6 +1,6 @@
 using rhdata.Rules;
 
-namespace RHWebFront.Repositories;
+namespace abstractions.Repositories;
 
 public interface IRuleRepository
 {

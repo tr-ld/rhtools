@@ -1,6 +1,6 @@
 ﻿@page "/history"
 @rendermode InteractiveServer
-@using RHWebFront.Services
+@using abstractions.Services
 @inject IRhAssetManager manager
 
 @if (Orders is null) { <p>Loading...</p> }

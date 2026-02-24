@@ -1,3 +1,5 @@
+using abstractions.Services;
+
 namespace RHWebFront.Services;
 
 public class SelectedSymbolManager : ISelectedSymbolManager

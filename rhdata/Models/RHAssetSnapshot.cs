@@ -1,6 +1,4 @@
-using rhdata;
-
-namespace RHWebFront.Models
+namespace rhdata.Models
 {
     /// <summary>
     /// Aggregates all available data for a specific asset/symbol at a point in time.

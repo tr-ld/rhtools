@@ -1,7 +1,7 @@
-using RHWebFront.Models;
 using rhdata;
+using rhdata.Args;
 
-namespace RHWebFront.Services;
+namespace abstractions.Services;
 
 public interface IBidAskNotificationService
 {
