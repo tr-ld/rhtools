@@ -1,0 +1,268 @@
+@using rhdata.Rules
+@using RHWebFront.Services
+@inject IRuleManager RuleManager
+
+@if (EditingRule is null)
+{
+    <div class="no-selection">
+        <p>Select a rule from the list to edit, or create a new rule.</p>
+    </div>
+}
+else
+{
+    <div class="edit-form">
+        <h5>@(IsNewRule ? "New Rule" : "Edit Rule")</h5>
+        
+        @if (_validationErrors.Any())
+        {
+            <div class="edit-validation-errors">
+                @foreach (var error in _validationErrors) { <div class="error-message">@error</div> }
+            </div>
+        }
+
+        <div class="template-selectors">
+            <div class="template-column">
+                <label>Trigger</label>
+                @if (_triggerTemplates is null) { <p>Loading...</p> }
+                else
+                {
+                    <div class="template-list">
+                        @foreach (var template in _triggerTemplates)
+                        {
+                            var isSelected = _selectedTriggerId == template.Id;
+                            
+                            <div class="template-item @(isSelected ? "selected" : "")" @onclick="() => SelectTrigger(template)" title="@template.Description">
+                                <span>@template.Name</span>
+                                @if (isSelected) { <span class="check">&#10003;</span> }
+                            </div>
+                        }
+                    </div>
+                    
+                    @if (_selectedTriggerId is not null)
+                    {
+                        <div class="value-input">
+                            <label>Trigger Value</label>
+                            <input type="number" step="0.0001" @bind="_triggerValue" />
+                        </div>
+                    }
+                }
+            </div>
+
+            <div class="template-column">
+                <label>Action</label>
+                @if (_actionTemplates is null) { <p>Loading...</p> }
+                else
+                {
+                    <div class="template-list">
+                        @foreach (var template in _actionTemplates)
+                        {
+                            var isSelected = _selectedActionId == template.Id;
+                            
+                            <div class="template-item @(isSelected ? "selected" : "")" @onclick="() => SelectAction(template)" title="@template.Description">
+                                <span>@template.Name</span>
+                                @if (isSelected) { <span class="check">&#10003;</span> }
+                            </div>
+                        }
+                    </div>
+                    
+                    @if (_selectedActionId is not null)
+                    {
+                        <div class="value-input">
+                            <label>Action Value</label>
+                            <input type="number" step="0.000000000000000001" @bind="_actionValue" />
+                        </div>
+                    }
+                }
+            </div>
+
+            <div class="template-column">
+                <label>Precision</label>
+                @if (_precisionTemplates is null) { <p>Loading...</p> }
+                else
+                {
+                    <div class="template-list">
+                        @foreach (var template in _precisionTemplates)
+                        {
+                            var isSelected = _selectedPrecisionId == template.Id;
+                            
+                            <div class="template-item @(isSelected ? "selected" : "")" @onclick="() => SelectPrecision(template)" title="@template.Description">
+                                <span>@template.Name</span>
+                                @if (isSelected) { <span class="check">&#10003;</span> }
+                            </div>
+                        }
+                    </div>
+                    
+                    @if (_selectedPrecisionId is not null)
+                    {
+                        <div class="value-input">
+                            <label>Precision Value</label>
+                            <input type="number" @bind="_precisionValue" />
+                        </div>
+                    }
+                }
+            </div>
+
+            <div class="template-column">
+                <label>Amount</label>
+                @if (_amountTemplates is null) { <p>Loading...</p> }
+                else
+                {
+                    <div class="template-list">
+                        @foreach (var template in _amountTemplates)
+                        {
+                            var isSelected = _selectedAmountId == template.Id;
+                            
+                            <div class="template-item @(isSelected ? "selected" : "")" @onclick="() => SelectAmount(template)" title="@template.Description">
+                                <span>@template.Name</span>
+                                @if (isSelected) { <span class="check">&#10003;</span> }
+                            </div>
+                        }
+                    </div>
+                    
+                    @if (_selectedAmountId is not null)
+                    {
+                        <div class="value-input">
+                            <label>Amount Value</label>
+                            <input type="number" step="0.000000000000000001" @bind="_amountValue" />
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="edit-actions">
+            <button class="save-btn" @onclick="HandleSave">Save</button>
+            <button class="cancel-btn" @onclick="HandleCancel">Cancel</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Rule EditingRule { get; set; }
+    
+    [Parameter]
+    public bool IsNewRule { get; set; }
+    
+    [Parameter]
+    public EventCallback<(Rule rule, RuleTrigger trigger, RuleAction action, RulePrecision precision, RuleAmount amount)> OnSave { get; set; }
+    
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private List<TriggerTemplate> _triggerTemplates;
+    private List<ActionTemplate> _actionTemplates;
+    private List<PrecisionTemplate> _precisionTemplates;
+    private List<AmountTemplate> _amountTemplates;
+
+    private int? _selectedTriggerId;
+    private int? _selectedActionId;
+    private int? _selectedPrecisionId;
+    private int? _selectedAmountId;
+    private decimal _triggerValue;
+    private decimal _actionValue;
+    private int _precisionValue;
+    private decimal _amountValue;
+    private List<string> _validationErrors = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _triggerTemplates = await RuleManager.GetTriggerTemplatesAsync();
+        _actionTemplates = await RuleManager.GetActionTemplatesAsync();
+        _precisionTemplates = await RuleManager.GetPrecisionTemplatesAsync();
+        _amountTemplates = await RuleManager.GetAmountTemplatesAsync();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (EditingRule is not null)
+        {
+            LoadRuleIntoForm(EditingRule);
+        }
+        else
+        {
+            ClearForm();
+        }
+    }
+
+    private void LoadRuleIntoForm(Rule rule)
+    {
+        _selectedTriggerId = rule.Trigger?.TriggerTemplateId;
+        _selectedActionId = rule.Action?.ActionTemplateId;
+        _selectedPrecisionId = rule.Precision?.PrecisionTemplateId;
+        _selectedAmountId = rule.Amount?.AmountTemplateId;
+        
+        _triggerValue = rule.Trigger?.Value ?? 0;
+        _actionValue = rule.Action?.Value ?? 0;
+        _precisionValue = rule.Precision?.Value ?? 0;
+        _amountValue = rule.Amount?.Value ?? 0;
+        
+        _validationErrors.Clear();
+    }
+
+    private void ClearForm()
+    {
+        _selectedTriggerId = null;
+        _selectedActionId = null;
+        _selectedPrecisionId = null;
+        _selectedAmountId = null;
+        _triggerValue = 0;
+        _actionValue = 0;
+        _precisionValue = 0;
+        _amountValue = 0;
+        _validationErrors.Clear();
+    }
+
+    private void SelectTrigger(TriggerTemplate template)
+    {
+        _selectedTriggerId = template.Id;
+        _validationErrors.Clear();
+    }
+
+    private void SelectAction(ActionTemplate template)
+    {
+        _selectedActionId = template.Id;
+        _validationErrors.Clear();
+    }
+
+    private void SelectPrecision(PrecisionTemplate template)
+    {
+        _selectedPrecisionId = template.Id;
+        _validationErrors.Clear();
+    }
+
+    private void SelectAmount(AmountTemplate template)
+    {
+        _selectedAmountId = template.Id;
+        _validationErrors.Clear();
+    }
+
+    private async Task HandleSave()
+    {
+        if (!Validate()) return;
+
+        var trigger = new RuleTrigger { TriggerTemplateId = _selectedTriggerId.Value, Value = _triggerValue };
+        var action = new RuleAction { ActionTemplateId = _selectedActionId.Value, Value = _actionValue };
+        var precision = new RulePrecision { PrecisionTemplateId = _selectedPrecisionId.Value, Value = _precisionValue };
+        var amount = new RuleAmount { AmountTemplateId = _selectedAmountId.Value, Value = _amountValue };
+
+        await OnSave.InvokeAsync((EditingRule, trigger, action, precision, amount));
+    }
+
+    private async Task HandleCancel()
+    {
+        await OnCancel.InvokeAsync();
+    }
+
+    private bool Validate()
+    {
+        _validationErrors.Clear();
+
+        if (_selectedTriggerId is null) _validationErrors.Add("Trigger must be selected");
+        if (_selectedActionId is null) _validationErrors.Add("Action must be selected");
+        if (_selectedPrecisionId is null) _validationErrors.Add("Precision must be selected");
+        if (_selectedAmountId is null) _validationErrors.Add("Amount must be selected");
+
+        return !_validationErrors.Any();
+    }
+}

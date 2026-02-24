@@ -11,6 +11,9 @@ namespace rhdata.Rules
         [Required]
         public int ActionTemplateId { get; set; }
 
+        [Column(TypeName = "decimal(38,18)")]
+        public decimal Value { get; set; }
+
         [ForeignKey(nameof(ActionTemplateId))]
         public ActionTemplate ActionTemplate { get; set; } = default!;
 

@@ -21,79 +21,84 @@
 
 @if (SymbolManager.ShowSymbolSelector)
 {
-    <div class="symbol-selector-container">
-        <div class="search-section">
-            <input type="text" class="symbol-search" placeholder="Search symbols..." @bind="_searchTerm" @bind:event="oninput" />
-            @if (!string.IsNullOrEmpty(_searchTerm))
-            {
-                <button class="clear-search" @onclick="ClearSearch">✕</button>
-            }
-        </div>
-
-        @if (_tradingPairs is null)
-        {
-            <div class="loading-state">
-                <p>Loading trading pairs...</p>
-            </div>
-        }
-        else
-        {
-            @if (_ruleSets is not null && _ruleSets.Count > 0 && string.IsNullOrWhiteSpace(_searchTerm))
-            {
-                <div class="symbols-with-rules-row">
-                    <div class="symbol-grid">
-                        @foreach (var pair in TradingPairsWithRules)
-                        {
-                            var isSelected = SymbolManager.SelectedSymbol == pair.Symbol;
-                            
-                            <div class="symbol-card @(isSelected ? "selected" : "")" @onclick="() => SelectSymbolCard(pair)">
-                                <span class="asset-code">@pair.AssetCode</span>
-                                @if (isSelected) { <span class="selected-indicator">✓</span> }
-                            </div>
-                        }
-                    </div>
-                </div>
-            }
-
-            <div class="symbol-grid">
-                @foreach (var pair in DisplayedPairs)
-                {
-                    var isSelected = SymbolManager.SelectedSymbol == pair.Symbol;
-                    
-                    <div class="symbol-card @(isSelected ? "selected" : "")" @onclick="() => SelectSymbolCard(pair)">
-                        <span class="asset-code">@pair.AssetCode</span>
-                        @if (isSelected) { <span class="selected-indicator">✓</span> }
-                    </div>
-                }
-                
-                @if (!_showAll && string.IsNullOrWhiteSpace(_searchTerm) && FilteredPairs.Count() > DisplayedPairs.Count)
-                {
-                    <div class="symbol-card show-all-card" @onclick="ShowAllSymbols">
-                        <span class="asset-code">...</span>
-                    </div>
-                }
-            </div>
-
-            @if (!FilteredPairs.Any())
-            {
-                <div class="no-results">
-                    <p>No symbols match "@_searchTerm"</p>
-                </div>
-            }
-        }
-    </div>
+    <SymbolSelector TradingPairs="_tradingPairs" RuleSets="_ruleSets" OnSymbolSelected="HandleSymbolSelected" />
 }
 
-@if (!string.IsNullOrEmpty(_validationError))
-{
-    <div class="validation-error">@_validationError</div>
-}
+@if (!string.IsNullOrEmpty(_validationError)) { <div class="validation-error">@_validationError</div> }
 
 @if (!string.IsNullOrEmpty(SymbolManager.SelectedSymbol))
 {
     <div class="rules-section">
-        <h4>Rules for @SymbolManager.SelectedSymbol</h4>
-        <p>Trigger and action configuration placeholder</p>
+        @if (_activeRuleSet is null)
+        {
+            <div class="loading-state">
+                <p>Loading rules...</p>
+            </div>
+        }
+        else
+        {
+            <div class="rules-container">
+                <div class="rule-list-section">
+                    <div class="position-warning">&#9888; Position management placeholder - rules ordered by creation</div>
+                    
+                    @if (_activeRuleSet.Rules.Any())
+                    {
+                        <div class="rule-list">
+                            @foreach (var rule in _activeRuleSet.Rules.OrderBy(r => r.Position?.Position ?? 0))
+                            {
+                                var isSelected = _editingRule is not null && _editingRule.Id == rule.Id;
+                                
+                                <article class="rule-card @(isSelected ? "selected" : "")" @onclick="() => SelectRule(rule)">
+                                    <header class="rule-card-header">
+                                        <div class="rule-position">Position @(rule.Position?.Position ?? 0)</div>
+                                        <div class="rule-active-toggle">
+                                            <input type="checkbox" id="active-@rule.Id" checked="@rule.IsActive" @onclick="() => ToggleRuleActive(rule)" @onclick:stopPropagation="true" />
+                                            <label for="active-@rule.Id">@(rule.IsActive ? "Active" : "Inactive")</label>
+                                        </div>
+                                    </header>
+                                    <div class="rule-card-body">
+                                        @if (rule.Trigger?.TriggerTemplate is not null && rule.Action?.ActionTemplate is not null)
+                                        {
+                                            <div class="rule-detail">
+                                                <span class="label">Trigger:</span>
+                                                <span class="value">@rule.Trigger.TriggerTemplate.Name (@rule.Trigger.Value)</span>
+                                            </div>
+                                            <div class="rule-detail">
+                                                <span class="label">Action:</span>
+                                                <span class="value">@rule.Action.ActionTemplate.Name (@rule.Action.Value)</span>
+                                            </div>
+                                            <div class="rule-detail">
+                                                <span class="label">Precision:</span>
+                                                <span class="value">@(rule.Precision?.PrecisionTemplate?.Name ?? "N/A") (@(rule.Precision?.Value ?? 0))</span>
+                                            </div>
+                                            <div class="rule-detail">
+                                                <span class="label">Amount:</span>
+                                                <span class="value">@(rule.Amount?.AmountTemplate?.Name ?? "N/A") (@(rule.Amount?.Value ?? 0))</span>
+                                            </div>
+                                        }
+                                        else { <div class="incomplete-rule">Incomplete rule configuration</div> }
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="no-rules">
+                            <p>No rules defined.</p>
+                        </div>
+                    }
+                    
+                    <div class="rule-list-actions">
+                        <button class="create-rule-btn" @onclick="CreateNewRule">+ Create New Rule</button>
+                    </div>
+                </div>
+
+                <div class="rule-edit-section">
+                    <RuleEditor EditingRule="_editingRule" IsNewRule="_isNewRule" OnSave="HandleSaveRule" OnCancel="CancelEdit" />
+                </div>
+            </div>
+        }
     </div>
 }
 else
@@ -113,56 +118,16 @@ else
     private List<RHTradingPair> _tradingPairs;
     private List<RuleSet> _ruleSets;
     private string _validationError = null;
-    private string _searchTerm = "";
-    private bool _showAll = false;
 
-    private IEnumerable<RHTradingPair> TradingPairsWithRules
-    {
-        get
-        {
-            if (_tradingPairs is null || _ruleSets is null) return [];
-            return _tradingPairs.Where(p => _ruleSets.Any(rs => rs.Symbol == p.Symbol)).OrderBy(p => p.AssetCode);
-        }
-    }
-
-    private IEnumerable<RHTradingPair> FilteredPairs
-    {
-        get
-        {
-            return _tradingPairs is null 
-                ? [] : string.IsNullOrWhiteSpace(_searchTerm)
-                ? (_ruleSets is null 
-                    ? _tradingPairs : _tradingPairs.Where(p => _ruleSets.All(rs => rs.Symbol != p.Symbol))).OrderBy(p => p.AssetCode) //no rules defined
-                    : _tradingPairs.Where(p => p.AssetCode.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)  //matches asset code
-                        || p.Symbol.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)).OrderBy(p => p.AssetCode); //matches symbol
-        }
-    }
-
-    private List<RHTradingPair> DisplayedPairs
-    {
-        get
-        {
-            if (!string.IsNullOrWhiteSpace(_searchTerm)) return FilteredPairs.ToList();
-            
-            var pairs = new List<RHTradingPair>();
-            
-            if (!string.IsNullOrEmpty(SymbolManager.SelectedSymbol))
-            {
-                var selectedPair = FilteredPairs.FirstOrDefault(p => p.Symbol == SymbolManager.SelectedSymbol);
-                if (selectedPair != null) pairs.Add(selectedPair);
-            }
-            
-            var remaining = FilteredPairs.Where(p => p.Symbol != SymbolManager.SelectedSymbol);
-            pairs.AddRange(_showAll ? remaining : remaining.Take(20));
-            
-            return pairs;
-        }
-    }
+    private RuleSet _activeRuleSet;
+    private Rule _editingRule;
+    private bool _isNewRule;
 
     protected override async Task OnInitializedAsync()
     {
         _tradingPairs = (await AssetManager.GetTradingPairs()).ForTradeCurrency(AppConfig.Value.TradeCurrency).ToList();
         _ruleSets = await RuleManager.GetRuleSetsForTradeCurrencyAsync();
+        
         ValidateResolvedSymbol();
     }
 
@@ -177,12 +142,12 @@ else
             Navigation.NavigateTo($"/rules?symbol={_resolvedSymbol}", replace: true);
         }
         else { _resolvedSymbol = null; }
-        
+
         // If data is already loaded (subsequent parameter changes), validate immediately
         if (_tradingPairs is not null) { ValidateResolvedSymbol(); }
     }
 
-    private void ValidateResolvedSymbol()
+    private async void ValidateResolvedSymbol()
     {
         if (string.IsNullOrEmpty(_resolvedSymbol))
         {
@@ -195,6 +160,7 @@ else
             SymbolManager.SelectedSymbol = _resolvedSymbol;
             SymbolManager.ShowSymbolSelector = false;
             _validationError = null;
+            await LoadRuleSetForSymbol(_resolvedSymbol);
         }
         else
         {
@@ -205,31 +171,83 @@ else
 
     private bool SymbolExists(string symbol) => _tradingPairs?.Any(p => p.Symbol == symbol) ?? false;
 
-    private void SelectSymbolCard(RHTradingPair pair)
+    private async Task HandleSymbolSelected(RHTradingPair pair)
     {
         _validationError = null;
 
-        if (SymbolManager.SelectedSymbol == pair.Symbol)
-        {
-            SymbolManager.ShowSymbolSelector = false;
-            _showAll = false;
-            return;
-        }
+        if (SymbolManager.SelectedSymbol == pair.Symbol) { SymbolManager.ShowSymbolSelector = false; return; }
 
         SymbolManager.SelectedSymbol = pair.Symbol;
-        _showAll = false;
         SymbolManager.ShowSymbolSelector = false;
-        _searchTerm = string.Empty;
         Navigation.NavigateTo($"/rules?symbol={pair.Symbol}", replace: true);
+        
+        await LoadRuleSetForSymbol(pair.Symbol);
     }
 
-    private void ClearSearch() { _searchTerm = string.Empty; }
+    private async Task LoadRuleSetForSymbol(string symbol)
+    {
+        _activeRuleSet = await RuleManager.GetRuleSetBySymbolAsync(symbol) ?? new RuleSet { Symbol = symbol };
 
-    private void ShowAllSymbols() { _showAll = true; }
+        CancelEdit();
+        StateHasChanged();
+    }
+
+    private void CreateNewRule()
+    {
+        var nextPosition = _activeRuleSet.Rules.Any() ? _activeRuleSet.Rules.Max(r => r.Position?.Position ?? 0) + 1 : 1;
+        
+        _editingRule = new Rule
+        {
+            RuleSetId = _activeRuleSet.Id,
+            IsActive = true,
+            Position = new RuleOrderPosition { Position = nextPosition }
+        };
+        
+        _isNewRule = true;
+    }
+
+    private void SelectRule(Rule rule)
+    {
+        _editingRule = rule;
+        _isNewRule = false;
+    }
+
+    private void ToggleRuleActive(Rule rule)
+    {
+        rule.IsActive = !rule.IsActive;
+    }
+
+    private async Task HandleSaveRule((Rule rule, RuleTrigger trigger, RuleAction action, RulePrecision precision, RuleAmount amount) data)
+    {
+        data.rule.Trigger = data.trigger;
+        data.rule.Action = data.action;
+        data.rule.Precision = data.precision;
+        data.rule.Amount = data.amount;
+
+        if (_isNewRule)
+        {
+            if (0 == _activeRuleSet.Id)
+            {
+                _activeRuleSet = await RuleManager.SaveRuleSetAsync(_activeRuleSet);
+            }
+            
+            data.rule.RuleSetId = _activeRuleSet.Id;
+            _activeRuleSet.Rules.Add(data.rule);
+        }
+
+        await RuleManager.SaveRuleAsync(data.rule);
+        
+        await LoadRuleSetForSymbol(_activeRuleSet.Symbol);
+    }
+
+    private void CancelEdit()
+    {
+        _editingRule = null;
+        _isNewRule = false;
+    }
 
     private void ShowSymbolSelector()
     {
         SymbolManager.ShowSymbolSelector = !SymbolManager.ShowSymbolSelector;
-        if (!SymbolManager.ShowSymbolSelector) { _showAll = false; }
     }
 }
