@@ -10,15 +10,16 @@
 @inject IRuleManager RuleManager
 @inject NavigationManager Navigation
 @inject IOptionsSnapshot<AppConfig> AppConfig
+@inject ISelectedSymbolManagementService SymbolManager
 
 <div class="page-header">
-    <h3>@(!string.IsNullOrEmpty(_selectedSymbol) ? $"{_selectedSymbol} Rules" : "Symbol Rules")</h3>
-    <button class="change-symbol-btn" @onclick="ShowSymbolSelector" title="Change symbol" disabled="@(string.IsNullOrEmpty(_selectedSymbol))">
+    <h3>@(!string.IsNullOrEmpty(SymbolManager.SelectedSymbol) ? $"{SymbolManager.SelectedSymbol} Rules" : "Symbol Rules")</h3>
+    <button class="change-symbol-btn" @onclick="ShowSymbolSelector" title="Change symbol" disabled="@(string.IsNullOrEmpty(SymbolManager.SelectedSymbol))">
         <img src="/icons/crypto-symbol.svg" alt="Change symbol" class="crypto-icon" />
     </button>
 </div>
 
-@if (_showSymbolSelector)
+@if (SymbolManager.ShowSymbolSelector)
 {
     <div class="symbol-selector-container">
         <div class="search-section">
@@ -39,12 +40,11 @@
         {
             @if (_ruleSets is not null && _ruleSets.Count > 0 && string.IsNullOrWhiteSpace(_searchTerm))
             {
-                <div class="symbols-with-rules-section">
-                    <h4 class="section-title">Symbols with Rules</h4>
+                <div class="symbols-with-rules-row">
                     <div class="symbol-grid">
                         @foreach (var pair in TradingPairsWithRules)
                         {
-                            var isSelected = _selectedSymbol == pair.Symbol;
+                            var isSelected = SymbolManager.SelectedSymbol == pair.Symbol;
                             
                             <div class="symbol-card @(isSelected ? "selected" : "")" @onclick="() => SelectSymbolCard(pair)">
                                 <span class="asset-code">@pair.AssetCode</span>
@@ -58,7 +58,7 @@
             <div class="symbol-grid">
                 @foreach (var pair in DisplayedPairs)
                 {
-                    var isSelected = _selectedSymbol == pair.Symbol;
+                    var isSelected = SymbolManager.SelectedSymbol == pair.Symbol;
                     
                     <div class="symbol-card @(isSelected ? "selected" : "")" @onclick="() => SelectSymbolCard(pair)">
                         <span class="asset-code">@pair.AssetCode</span>
@@ -89,10 +89,10 @@
     <div class="validation-error">@_validationError</div>
 }
 
-@if (!string.IsNullOrEmpty(_selectedSymbol))
+@if (!string.IsNullOrEmpty(SymbolManager.SelectedSymbol))
 {
     <div class="rules-section">
-        <h4>Rules for @_selectedSymbol</h4>
+        <h4>Rules for @SymbolManager.SelectedSymbol</h4>
         <p>Trigger and action configuration placeholder</p>
     </div>
 }
@@ -112,11 +112,9 @@ else
 
     private List<RHTradingPair> _tradingPairs;
     private List<RuleSet> _ruleSets;
-    private string _selectedSymbol = null;
     private string _validationError = null;
     private string _searchTerm = "";
     private bool _showAll = false;
-    private bool _showSymbolSelector = true;
 
     private IEnumerable<RHTradingPair> TradingPairsWithRules
     {
@@ -135,7 +133,7 @@ else
                 ? [] : string.IsNullOrWhiteSpace(_searchTerm)
                 ? (_ruleSets is null 
                     ? _tradingPairs : _tradingPairs.Where(p => _ruleSets.All(rs => rs.Symbol != p.Symbol))).OrderBy(p => p.AssetCode) //no rules defined
-                    : _tradingPairs.Where(p => p.AssetCode.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) //matches asset code
+                    : _tradingPairs.Where(p => p.AssetCode.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)  //matches asset code
                         || p.Symbol.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)).OrderBy(p => p.AssetCode); //matches symbol
         }
     }
@@ -148,13 +146,13 @@ else
             
             var pairs = new List<RHTradingPair>();
             
-            if (!string.IsNullOrEmpty(_selectedSymbol))
+            if (!string.IsNullOrEmpty(SymbolManager.SelectedSymbol))
             {
-                var selectedPair = FilteredPairs.FirstOrDefault(p => p.Symbol == _selectedSymbol);
+                var selectedPair = FilteredPairs.FirstOrDefault(p => p.Symbol == SymbolManager.SelectedSymbol);
                 if (selectedPair != null) pairs.Add(selectedPair);
             }
             
-            var remaining = FilteredPairs.Where(p => p.Symbol != _selectedSymbol);
+            var remaining = FilteredPairs.Where(p => p.Symbol != SymbolManager.SelectedSymbol);
             pairs.AddRange(_showAll ? remaining : remaining.Take(20));
             
             return pairs;
@@ -186,17 +184,21 @@ else
 
     private void ValidateResolvedSymbol()
     {
-        if (string.IsNullOrEmpty(_resolvedSymbol)) { _selectedSymbol = null; _validationError = null; return; }
+        if (string.IsNullOrEmpty(_resolvedSymbol))
+        {
+            if (string.IsNullOrEmpty(SymbolManager.SelectedSymbol)) _validationError = null;
+            return;
+        }
 
         if (SymbolExists(_resolvedSymbol))
         {
-            _selectedSymbol = _resolvedSymbol;
-            _showSymbolSelector = false;
+            SymbolManager.SelectedSymbol = _resolvedSymbol;
+            SymbolManager.ShowSymbolSelector = false;
             _validationError = null;
         }
         else
         {
-            _selectedSymbol = null;
+            SymbolManager.ClearSelection();
             _validationError = $"The symbol '{_resolvedSymbol}' was not found. Please select from the list.";
         }
     }
@@ -207,16 +209,16 @@ else
     {
         _validationError = null;
 
-        if (_selectedSymbol == pair.Symbol)
+        if (SymbolManager.SelectedSymbol == pair.Symbol)
         {
-            _showSymbolSelector = false;
+            SymbolManager.ShowSymbolSelector = false;
             _showAll = false;
             return;
         }
 
-        _selectedSymbol = pair.Symbol;
+        SymbolManager.SelectedSymbol = pair.Symbol;
         _showAll = false;
-        _showSymbolSelector = false;
+        SymbolManager.ShowSymbolSelector = false;
         _searchTerm = string.Empty;
         Navigation.NavigateTo($"/rules?symbol={pair.Symbol}", replace: true);
     }
@@ -227,7 +229,7 @@ else
 
     private void ShowSymbolSelector()
     {
-        _showSymbolSelector = !_showSymbolSelector;
-        if (!_showSymbolSelector) { _showAll = false; }
+        SymbolManager.ShowSymbolSelector = !SymbolManager.ShowSymbolSelector;
+        if (!SymbolManager.ShowSymbolSelector) { _showAll = false; }
     }
 }

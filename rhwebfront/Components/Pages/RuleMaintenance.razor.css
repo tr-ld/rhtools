@@ -66,6 +66,23 @@
     color: var(--muted);
 }
 
+.symbols-with-rules-row {
+    width: fit-content;
+    background-color: var(--surface);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border: 2px solid var(--border-medium);
+}
+
+.symbols-with-rules-row .symbol-grid {
+    margin-bottom: 0;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(80px, auto);
+    grid-template-columns: unset;
+    width: auto;
+}
+
 .symbols-with-rules-section {
     margin-bottom: 2rem;
     padding-bottom: 1.5rem;

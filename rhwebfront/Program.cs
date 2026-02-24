@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using RHWebFront.Components;
 using RHWebFront.Config;
 using RHWebFront.Data;
 using RHWebFront.Repositories;
+using RHWebFront.Repositories.Emulated;
 using RHWebFront.Services;
 
 namespace RHWebFront
@@ -21,12 +23,17 @@ namespace RHWebFront
 
             var app = builder.Build();
 
-            // Ensure database is created and migrations are applied
+            // Ensure database is created and migrations are applied (only when not using emulation)
             using (var scope = app.Services.CreateScope())
             {
-                //todo: move db location to appdata
-                var db = scope.ServiceProvider.GetRequiredService<RhDbContext>();
-                db.Database.Migrate();
+                var emulationConfig = scope.ServiceProvider.GetRequiredService<IOptions<EmulationConfig>>().Value;
+                
+                if (!emulationConfig.EnableRepositoryEmulation)
+                {
+                    //todo: move db location to appdata
+                    var db = scope.ServiceProvider.GetRequiredService<RhDbContext>();
+                    db.Database.Migrate();
+                }
             }
 
             // Configure the HTTP request pipeline.
@@ -75,10 +82,23 @@ namespace RHWebFront
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=rhtools.db";
                 svc.AddDbContextPool<RhDbContext>(options => options.UseSqlite(connectionString));
 
-                // Repositories
-                svc.AddScoped<ISymbolWatchlistRepository, SymbolWatchlistRepository>();
-                svc.AddScoped<IBidAskHistoryRepository, BidAskHistoryRepository>();
-                svc.AddScoped<IRuleRepository, RuleRepository>();
+                // Load config early to determine which repositories to register
+                builder.LoadConfig();
+                var emulationConfig = builder.Configuration.GetSection("EmulationConfig").Get<EmulationConfig>() ?? new EmulationConfig();
+
+                // Conditionally register repositories based on emulation setting
+                if (emulationConfig.EnableRepositoryEmulation)
+                {
+                    svc.AddSingleton<ISymbolWatchlistRepository, EmulatedSymbolWatchlistRepository>();
+                    svc.AddSingleton<IBidAskHistoryRepository, EmulatedBidAskHistoryRepository>();
+                    svc.AddSingleton<IRuleRepository, EmulatedRuleRepository>();
+                }
+                else
+                {
+                    svc.AddScoped<ISymbolWatchlistRepository, SymbolWatchlistRepository>();
+                    svc.AddScoped<IBidAskHistoryRepository, BidAskHistoryRepository>();
+                    svc.AddScoped<IRuleRepository, RuleRepository>();
+                }
 
                 // HTTP Client & Asset Manager
                 svc.AddHttpClient<IRhApiClient, RhApiClient>(client => //this suffices for registering RhApiClient - do not register separately
@@ -92,11 +112,10 @@ namespace RHWebFront
                 // Singleton Services
                 svc.AddSingleton<ISymbolWatchlistService, SymbolWatchlistService>();
                 svc.AddSingleton<IBidAskNotificationService, BidAskNotificationService>();
+                svc.AddScoped<ISelectedSymbolManagementService, SelectedSymbolManagementService>();
 
                 // Background Service
                 svc.AddHostedService<BidAskPollingService>();
-
-                builder.LoadConfig();
 
                 return builder;
             }
@@ -115,6 +134,11 @@ namespace RHWebFront
                     
                 builder.Services.AddOptions<CacheConfig>()
                     .Bind(builder.Configuration.GetSection("CacheConfig"))
+                    .ValidateDataAnnotations()
+                    .ValidateOnStart();
+                    
+                builder.Services.AddOptions<EmulationConfig>()
+                    .Bind(builder.Configuration.GetSection("EmulationConfig"))
                     .ValidateDataAnnotations()
                     .ValidateOnStart();
             }
