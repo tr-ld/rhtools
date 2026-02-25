@@ -10,4 +10,8 @@
     <ProjectReference Include="..\abstractions\abstractions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Services\" />
+  </ItemGroup>
+
 </Project>

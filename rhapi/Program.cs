@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -53,13 +54,24 @@ namespace rhapi
             });
             
             svc.AddAuthorization();
-            svc.AddHttpClient<IRhCryptoMarket, RhCryptoMarket>(client => //this suffices for registering RhCryptoMarket - do not register separately
+
+            // Configure crypto market service based on emulation settings
+            var useEmulatedCryptoMarket = builder.Configuration.GetValue<bool>("Emulation:EmulateMarket");
+            if (useEmulatedCryptoMarket)
             {
-                //todo get both of these from appsettings.json. Move consts out of RhCryptoMarket.
-                client.Timeout = TimeSpan.FromSeconds(10);
-                client.BaseAddress = new Uri(RhCryptoMarket.BASE_URL);
-                client.DefaultRequestHeaders.Add(RhCryptoMarket.API_KEY_HEADER, Environment.GetEnvironmentVariable("rhak"));
-            });
+                Console.WriteLine("Emulating market...");
+                svc.AddSingleton<IRhCryptoMarket, EmulatedRhCryptoMarket>();
+            }
+            else
+            {
+                svc.AddHttpClient<IRhCryptoMarket, RhCryptoMarket>(client => //this suffices for registering RhCryptoMarket - do not register separately
+                {
+                    //todo get both of these from appsettings.json. Move consts out of RhCryptoMarket.
+                    client.Timeout = TimeSpan.FromSeconds(10);
+                    client.BaseAddress = new Uri(RhCryptoMarket.BASE_URL);
+                    client.DefaultRequestHeaders.Add(RhCryptoMarket.API_KEY_HEADER, Environment.GetEnvironmentVariable("rhak"));
+                });
+            }
 
             //svc.AddSingleton<ExampleVerify>();
             svc.AddSingleton<RhAccountEndpoints>();
