@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using rhapi.Enums;
 using rhapi.Poco;
@@ -11,75 +12,31 @@ using rhapi.Poco.Order;
 using rhapi.Poco.Order.OrderConfig;
 using rhapi.Poco.Responses;
 
-namespace rhapi.Services;
+namespace rhapi.Services.Emulated;
 
 public class EmulatedRhCryptoMarket : IRhCryptoMarket
 {
-    private const string ACCOUNT_NUMBER = "EMULATED123456";
-    
-    private readonly List<RhHolding> _holdings =
-    [
-        new RhHolding
-        {
-            AccountNumber = ACCOUNT_NUMBER,
-            AssetCode = "BTC",
-            TotalQuantity = 0.5m,
-            QuantityAvailableForTrading = 0.5m
-        },
-        new RhHolding
-        {
-            AccountNumber = ACCOUNT_NUMBER,
-            AssetCode = "ETH",
-            TotalQuantity = 2.0m,
-            QuantityAvailableForTrading = 2.0m
-        }
-    ];
+    private readonly ILogger<EmulatedRhCryptoMarket> _logger;
+    private readonly List<RhHolding> _holdings;
+    private readonly List<RhOrder> _orders;
 
-    private readonly List<RhOrder> _orders = [];
-    private int _orderCounter = 1000;
-
-    private readonly List<TradingPair> _tradingPairs =
-    [
-        new TradingPair
-        {
-            AssetCode = "BTC",
-            QuoteCode = "USD",
-            Symbol = "BTC-USD",
-            AssetIncrement = "0.00000001",
-            QuoteIncrement = "0.01",
-            MaxOrderSize = "5.0",
-            MinOrderSize = "0.00001",
-            Status = TradingStatus.tradable
-        },
-        new TradingPair
-        {
-            AssetCode = "ETH",
-            QuoteCode = "USD",
-            Symbol = "ETH-USD",
-            AssetIncrement = "0.00000001",
-            QuoteIncrement = "0.01",
-            MaxOrderSize = "50.0",
-            MinOrderSize = "0.0001",
-            Status = TradingStatus.tradable
-        },
-        new TradingPair
-        {
-            AssetCode = "DOGE",
-            QuoteCode = "USD",
-            Symbol = "DOGE-USD",
-            AssetIncrement = "0.00000001",
-            QuoteIncrement = "0.01",
-            MaxOrderSize = "10000.0",
-            MinOrderSize = "1.0",
-            Status = TradingStatus.tradable
-        }
-    ];
+    public EmulatedRhCryptoMarket(ILogger<EmulatedRhCryptoMarket> logger)
+    {
+        _logger = logger;
+        _holdings = EmulatedMarketData.CreateInitialHoldings();
+        _orders = EmulatedMarketData.CreateInitialOrders();
+        
+        _logger.LogInformation("EmulatedRhCryptoMarket initialized with {OrderCount} orders, {HoldingCount} holdings, {TradingPairCount} trading pairs", 
+            _orders.Count, _holdings.Count, EmulatedMarketData.AllTradingPairs.Count);
+    }
 
     public Task<RhAccountResponse> GetAccount()
     {
+        _logger.LogInformation("GetAccount called");
+        
         return Task.FromResult(new RhAccountResponse
         {
-            AccountNumber = ACCOUNT_NUMBER,
+            AccountNumber = EmulatedMarketData.ACCOUNT_NUMBER,
             Status = "active",
             BuyingPower = 10000.00m,
             BuyingPowerCurrency = "USD"
@@ -88,6 +45,8 @@ public class EmulatedRhCryptoMarket : IRhCryptoMarket
 
     public Task<RhHoldingsResponse> GetHoldings(string[] symbols)
     {
+        _logger.LogInformation("GetHoldings called with symbols: {Symbols}", symbols != null ? string.Join(", ", symbols) : "all");
+        
         var filtered = symbols?.Length > 0
             ? _holdings.Where(h => symbols.Contains(h.AssetCode)).ToArray()
             : _holdings.ToArray();
@@ -97,12 +56,21 @@ public class EmulatedRhCryptoMarket : IRhCryptoMarket
 
     public Task<RhOrder> GetOrder(Guid orderId)
     {
+        _logger.LogInformation("GetOrder called for order ID: {OrderId}", orderId);
+        
         var order = _orders.FirstOrDefault(o => o.Id == orderId.ToString());
+        
+        if (order == null)
+            _logger.LogWarning("Order not found: {OrderId}", orderId);
+        
         return Task.FromResult(order);
     }
 
     public Task<RhOrdersResponse> GetOrders(RhOrderParams orderParams)
     {
+        _logger.LogInformation("GetOrders called with symbol: {Symbol}, state: {State}", 
+                               orderParams?.Symbol ?? "all", orderParams?.State?.ToString() ?? "all");
+        
         var query = _orders.AsEnumerable();
 
         if (!string.IsNullOrEmpty(orderParams?.Symbol))
@@ -116,6 +84,9 @@ public class EmulatedRhCryptoMarket : IRhCryptoMarket
 
     public Task<RhOrder> PlaceOrder(RhPlaceOrderParams orderParams, IOptions<JsonOptions> options)
     {
+        _logger.LogInformation("PlaceOrder called - Symbol: {Symbol}, Side: {Side}, Type: {Type}, Quantity: {Quantity}", 
+            orderParams.Symbol, orderParams.Side, orderParams.Type, orderParams.CoalesceAssetQuantity());
+        
         var orderId = Guid.NewGuid();
         var now = DateTime.UtcNow;
         var price = GetSimulatedPrice(orderParams.Symbol);
@@ -123,7 +94,7 @@ public class EmulatedRhCryptoMarket : IRhCryptoMarket
         var order = new RhOrder
         {
             Id = orderId.ToString(),
-            AccountNumber = ACCOUNT_NUMBER,
+            AccountNumber = EmulatedMarketData.ACCOUNT_NUMBER,
             ClientOrderId = orderParams.ClientOrderId,
             Side = orderParams.Side,
             Symbol = orderParams.Symbol,
@@ -143,24 +114,39 @@ public class EmulatedRhCryptoMarket : IRhCryptoMarket
         }
 
         _orders.Add(order);
+        _logger.LogInformation("Order placed successfully - OrderId: {OrderId}, Price: {Price}, Total orders: {OrderCount}", 
+            orderId, price, _orders.Count);
+        
         return Task.FromResult(order);
     }
 
     public Task<RhTradingPairsResponse> GetTradingPairs(RhTradingPairsParams pairParams)
     {
-        var query = _tradingPairs.AsEnumerable();
+        var random = new Random();
+        var results = new List<TradingPair>();
 
-        if (pairParams?.SymbolPairs is { Count: > 0 })
-        {
-            query = query.Where(tp => pairParams.SymbolPairs.Any(pair => 
-                tp.AssetCode == pair.crypto && tp.QuoteCode == pair.currency));
-        }
+        // Always include required symbols
+        var requiredPairs = EmulatedMarketData.AllTradingPairs.Where(tp => EmulatedMarketData.RequiredSymbols.Contains(tp.AssetCode)).ToList();
+        results.AddRange(requiredPairs);
 
-        return Task.FromResult(new RhTradingPairsResponse { Results = query.ToArray() });
+        // Get a random number of additional pairs (between 20 and all remaining pairs)
+        var remainingPairs = EmulatedMarketData.AllTradingPairs.Where(tp => !EmulatedMarketData.RequiredSymbols.Contains(tp.AssetCode)).ToList();
+        var randomCount = random.Next(20, remainingPairs.Count + 1);
+        
+        // Randomly select that many additional pairs
+        var additionalPairs = remainingPairs.OrderBy(_ => random.Next()).Take(randomCount).ToList();
+        results.AddRange(additionalPairs);
+
+        _logger.LogInformation("GetTradingPairs returning {Count} pairs ({RequiredCount} required + {AdditionalCount} additional)", 
+                               results.Count, requiredPairs.Count, additionalPairs.Count);
+
+        return Task.FromResult(new RhTradingPairsResponse { Results = results.ToArray() });
     }
 
     public Task<RhEstimatedPriceResponse> GetEstimatedPrice(RhEstimatedPriceParams estParams)
     {
+        _logger.LogInformation("GetEstimatedPrice called for symbol: {Symbol}, side: {Side}", estParams.Symbol, estParams.Side);
+        
         var price = GetSimulatedPrice(estParams.Symbol);
         var spread = price * 0.001m; // 0.1% spread
         
@@ -203,32 +189,56 @@ public class EmulatedRhCryptoMarket : IRhCryptoMarket
 
     public Task<RhBidAskResponse> GetBestBidAsk(RhBidAskParams bidAskParams)
     {
-        var price = GetSimulatedPrice(bidAskParams.Symbol);
-        var spread = price * 0.001m; // 0.1% spread
+        _logger.LogInformation("GetBestBidAsk called for symbol: {Symbol}", bidAskParams.Symbol);
+        
+        // Split comma-separated symbols and create a result for each
+        var symbols = bidAskParams.Symbol.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var results = new List<BidAskPrice>();
 
-        var bidAsk = new BidAskPrice
+        foreach (var symbol in symbols)
         {
-            Symbol = bidAskParams.Symbol,
-            Price = price,
-            Quantity = 10.0m,
-            BidInclusiveOfSellSpread = price - spread,
-            SellSpread = spread,
-            AskInclusiveOfBuySpread = price + spread,
-            BuySpread = spread,
-            Timestamp = DateTimeOffset.UtcNow
-        };
+            var price = GetSimulatedPrice(symbol);
+            var spread = price * 0.001m; // 0.1% spread
 
-        return Task.FromResult(new RhBidAskResponse { Results = [bidAsk] });
+            results.Add(new BidAskPrice
+            {
+                Symbol = symbol,
+                Price = price,
+                Quantity = 10.0m,
+                BidInclusiveOfSellSpread = price - spread,
+                SellSpread = spread,
+                AskInclusiveOfBuySpread = price + spread,
+                BuySpread = spread,
+                Timestamp = DateTimeOffset.UtcNow
+            });
+        }
+
+        return Task.FromResult(new RhBidAskResponse { Results = results.ToArray() });
     }
 
     private static decimal GetSimulatedPrice(string symbol)
     {
-        return symbol switch
+        // Normalize symbol to include -USD if missing
+        var normalizedSymbol = symbol.Contains('-') ? symbol : $"{symbol}-USD";
+        
+        return normalizedSymbol switch
         {
             "BTC-USD" => 52000.00m,
             "ETH-USD" => 2800.00m,
+            "SOL-USD" => 110.00m,
+            "XRP-USD" => 0.52m,
             "DOGE-USD" => 0.15m,
-            _ => 100.00m
+            "SHIB-USD" => 0.00001235m,
+            "ADA-USD" => 0.45m,
+            "AVAX-USD" => 38.00m,
+            "DOT-USD" => 7.20m,
+            "MATIC-USD" => 0.92m,
+            "LINK-USD" => 15.50m,
+            "UNI-USD" => 6.80m,
+            "LTC-USD" => 95.00m,
+            "ATOM-USD" => 10.50m,
+            "ALGO-USD" => 0.18m,
+            _ => 1.25m
         };
     }
 }

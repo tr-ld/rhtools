@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using rhapi.Endpoints;
 using rhapi.Poco;
 using rhapi.Services;
+using rhapi.Services.Emulated;
 
 namespace rhapi
 {
