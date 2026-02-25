@@ -10,7 +10,7 @@ public class RuleRepository(RhDbContext context) : IRuleRepository
     public async Task<List<RuleSet>> GetAllRuleSetsWithRelatedDataAsync(CancellationToken ct = default)
     {
         return await context.RuleSets
-            .Include(rs => rs.Rules).ThenInclude(r => r.Position)
+            .Include(rs => rs.Rules)
             .Include(rs => rs.Rules).ThenInclude(r => r.Trigger).ThenInclude(t => t.TriggerTemplate)
             .Include(rs => rs.Rules).ThenInclude(r => r.Action).ThenInclude(a => a.ActionTemplate)
             .Include(rs => rs.Rules).ThenInclude(r => r.Precision).ThenInclude(p => p.PrecisionTemplate)
@@ -22,7 +22,7 @@ public class RuleRepository(RhDbContext context) : IRuleRepository
     public async Task<RuleSet> GetRuleSetBySymbolAsync(string symbol, CancellationToken ct = default)
     {
         return await context.RuleSets
-            .Include(rs => rs.Rules).ThenInclude(r => r.Position)
+            .Include(rs => rs.Rules)
             .Include(rs => rs.Rules).ThenInclude(r => r.Trigger).ThenInclude(t => t.TriggerTemplate)
             .Include(rs => rs.Rules).ThenInclude(r => r.Action).ThenInclude(a => a.ActionTemplate)
             .Include(rs => rs.Rules).ThenInclude(r => r.Precision).ThenInclude(p => p.PrecisionTemplate)
@@ -69,25 +69,23 @@ public class RuleRepository(RhDbContext context) : IRuleRepository
         {
             rule.CreatedAt = now;
             rule.UpdatedAt = now;
-            
-            if (rule.Position is not null) rule.Position.CreatedAt = now;
-            if (rule.Trigger is not null) rule.Trigger.CreatedAt = now;
-            if (rule.Action is not null) rule.Action.CreatedAt = now;
-            if (rule.Precision is not null) rule.Precision.CreatedAt = now;
-            if (rule.Amount is not null) rule.Amount.CreatedAt = now;
-            
+
+            rule.Trigger?.CreatedAt = now;
+            rule.Action?.CreatedAt = now;
+            rule.Precision?.CreatedAt = now;
+            rule.Amount?.CreatedAt = now;
+
             context.Rules.Add(rule);
         }
         else
         {
             rule.UpdatedAt = now;
-            
-            if (rule.Position is not null) rule.Position.UpdatedAt = now;
-            if (rule.Trigger is not null) rule.Trigger.UpdatedAt = now;
-            if (rule.Action is not null) rule.Action.UpdatedAt = now;
-            if (rule.Precision is not null) rule.Precision.UpdatedAt = now;
-            if (rule.Amount is not null) rule.Amount.UpdatedAt = now;
-            
+
+            rule.Trigger?.UpdatedAt = now;
+            rule.Action?.UpdatedAt = now;
+            rule.Precision?.UpdatedAt = now;
+            rule.Amount?.UpdatedAt = now;
+
             context.Rules.Update(rule);
         }
 

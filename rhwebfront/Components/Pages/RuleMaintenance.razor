@@ -44,13 +44,13 @@
                     @if (_activeRuleSet.Rules.Any())
                     {
                         <div class="rule-list">
-                            @foreach (var rule in _activeRuleSet.Rules.OrderBy(r => r.Position?.Position ?? 0))
+                            @foreach (var rule in _activeRuleSet.Rules.OrderBy(r => r.Position))
                             {
                                 var isSelected = _editingRule is not null && _editingRule.Id == rule.Id;
                                 
                                 <article class="rule-card @(isSelected ? "selected" : "")" @onclick="() => SelectRule(rule)">
                                     <header class="rule-card-header">
-                                        <div class="rule-position">Position @(rule.Position?.Position ?? 0)</div>
+                                        <div class="rule-position">Position @(rule.Position)</div>
                                         <div class="rule-active-toggle">
                                             <input type="checkbox" id="active-@rule.Id" checked="@rule.IsActive" @onclick="() => ToggleRuleActive(rule)" @onclick:stopPropagation="true" />
                                             <label for="active-@rule.Id">@(rule.IsActive ? "Active" : "Inactive")</label>
@@ -194,13 +194,13 @@ else
 
     private void CreateNewRule()
     {
-        var nextPosition = _activeRuleSet.Rules.Any() ? _activeRuleSet.Rules.Max(r => r.Position?.Position ?? 0) + 1 : 1;
+        var nextPosition = _activeRuleSet.Rules.Any() ? _activeRuleSet.Rules.Max(r => r.Position) + 1 : 1;
         
         _editingRule = new Rule
         {
             RuleSetId = _activeRuleSet.Id,
             IsActive = true,
-            Position = new RuleOrderPosition { Position = nextPosition }
+            Position = nextPosition
         };
         
         _isNewRule = true;

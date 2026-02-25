@@ -107,12 +107,6 @@ public static class RulesSetup
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("DATETIME('now')");
             });
 
-            modelBuilder.Entity<RuleOrderPosition>(entity =>
-            {
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("DATETIME('now')");
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("DATETIME('now')");
-            });
-
             modelBuilder.Entity<Rule>(entity =>
             {
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("DATETIME('now')");

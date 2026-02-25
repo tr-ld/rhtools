@@ -12,7 +12,7 @@ namespace rhdata.Rules
         public int RuleSetId { get; set; }
 
         [Required]
-        public int PositionId { get; set; }
+        public int Position { get; set; }
 
         [Required]
         public int TriggerId { get; set; }
@@ -35,9 +35,6 @@ namespace rhdata.Rules
 
         [ForeignKey(nameof(RuleSetId))]
         public RuleSet RuleSet { get; set; } = default!;
-
-        [ForeignKey(nameof(PositionId))]
-        public RuleOrderPosition Position { get; set; } = default!;
 
         [ForeignKey(nameof(TriggerId))]
         public RuleTrigger Trigger { get; set; } = default!;

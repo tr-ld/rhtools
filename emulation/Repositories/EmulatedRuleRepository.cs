@@ -12,7 +12,6 @@ public class EmulatedRuleRepository : IRuleRepository
     private readonly List<AmountTemplate> _amountTemplates;
     private int _nextRuleSetId = 4;
     private int _nextRuleId = 5;
-    private int _nextPositionId = 5;
     private int _nextTriggerId = 5;
     private int _nextActionId = 5;
     private int _nextPrecisionId = 5;
@@ -79,7 +78,7 @@ public class EmulatedRuleRepository : IRuleRepository
                     {
                         Id = 1,
                         RuleSetId = 1,
-                        PositionId = 1,
+                        Position = 1,
                         TriggerId = 1,
                         ActionId = 1,
                         PrecisionId = 1,
@@ -87,7 +86,6 @@ public class EmulatedRuleRepository : IRuleRepository
                         IsActive = true,
                         CreatedAt = now.AddDays(-10),
                         UpdatedAt = now.AddDays(-1),
-                        Position = new RuleOrderPosition { Id = 1, Position = 1, CreatedAt = now, UpdatedAt = now },
                         Trigger = new RuleTrigger
                         {
                             Id = 1,
@@ -139,7 +137,7 @@ public class EmulatedRuleRepository : IRuleRepository
                     {
                         Id = 2,
                         RuleSetId = 2,
-                        PositionId = 2,
+                        Position = 1,
                         TriggerId = 2,
                         ActionId = 2,
                         PrecisionId = 2,
@@ -147,7 +145,6 @@ public class EmulatedRuleRepository : IRuleRepository
                         IsActive = true,
                         CreatedAt = now.AddDays(-5),
                         UpdatedAt = now,
-                        Position = new RuleOrderPosition { Id = 2, Position = 1, CreatedAt = now, UpdatedAt = now },
                         Trigger = new RuleTrigger
                         {
                             Id = 2,
@@ -189,7 +186,7 @@ public class EmulatedRuleRepository : IRuleRepository
                     {
                         Id = 3,
                         RuleSetId = 2,
-                        PositionId = 3,
+                        Position = 2,
                         TriggerId = 3,
                         ActionId = 3,
                         PrecisionId = 3,
@@ -197,7 +194,6 @@ public class EmulatedRuleRepository : IRuleRepository
                         IsActive = false,
                         CreatedAt = now.AddDays(-5),
                         UpdatedAt = now,
-                        Position = new RuleOrderPosition { Id = 3, Position = 2, CreatedAt = now, UpdatedAt = now },
                         Trigger = new RuleTrigger
                         {
                             Id = 3,
@@ -249,7 +245,7 @@ public class EmulatedRuleRepository : IRuleRepository
                     {
                         Id = 4,
                         RuleSetId = 3,
-                        PositionId = 4,
+                        Position = 1,
                         TriggerId = 4,
                         ActionId = 4,
                         PrecisionId = 4,
@@ -257,7 +253,6 @@ public class EmulatedRuleRepository : IRuleRepository
                         IsActive = true,
                         CreatedAt = now.AddDays(-2),
                         UpdatedAt = now,
-                        Position = new RuleOrderPosition { Id = 4, Position = 1, CreatedAt = now, UpdatedAt = now },
                         Trigger = new RuleTrigger
                         {
                             Id = 4,
@@ -371,14 +366,6 @@ public class EmulatedRuleRepository : IRuleRepository
             rule.CreatedAt = now;
             rule.UpdatedAt = now;
 
-            if (rule.Position is not null && rule.Position.Id == 0)
-            {
-                rule.Position.Id = _nextPositionId++;
-                rule.PositionId = rule.Position.Id;
-                rule.Position.CreatedAt = now;
-                rule.Position.UpdatedAt = now;
-            }
-
             if (rule.Trigger is not null && rule.Trigger.Id == 0)
             {
                 rule.Trigger.Id = _nextTriggerId++;
@@ -419,22 +406,19 @@ public class EmulatedRuleRepository : IRuleRepository
         {
             rule.UpdatedAt = now;
 
-            if (rule.Position is not null) rule.Position.UpdatedAt = now;
-            if (rule.Trigger is not null) rule.Trigger.UpdatedAt = now;
-            if (rule.Action is not null) rule.Action.UpdatedAt = now;
-            if (rule.Precision is not null) rule.Precision.UpdatedAt = now;
-            if (rule.Amount is not null) rule.Amount.UpdatedAt = now;
+            rule.Trigger?.UpdatedAt = now;
+            rule.Action?.UpdatedAt = now;
+            rule.Precision?.UpdatedAt = now;
+            rule.Amount?.UpdatedAt = now;
 
             var ruleSet = _ruleSets.FirstOrDefault(rs => rs.Id == rule.RuleSetId);
-            if (ruleSet is not null)
-            {
-                var existingRule = ruleSet.Rules.FirstOrDefault(r => r.Id == rule.Id);
-                if (existingRule is not null)
-                {
-                    var index = ruleSet.Rules.IndexOf(existingRule);
-                    ruleSet.Rules[index] = rule;
-                }
-            }
+            if (ruleSet is null) return Task.FromResult(rule);
+            
+            var existingRule = ruleSet.Rules.FirstOrDefault(r => r.Id == rule.Id);
+            if (existingRule is null) return Task.FromResult(rule);
+                
+            var index = ruleSet.Rules.IndexOf(existingRule);
+            ruleSet.Rules[index] = rule;
         }
 
         return Task.FromResult(rule);

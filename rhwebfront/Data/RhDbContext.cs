@@ -12,7 +12,6 @@ public class RhDbContext(DbContextOptions<RhDbContext> options) : DbContext(opti
 
     // Rule-related DbSets
     public DbSet<RuleSet> RuleSets { get; set; }
-    public DbSet<RuleOrderPosition> RuleOrderPositions { get; set; }
     public DbSet<Rule> Rules { get; set; }
     public DbSet<TriggerTemplate> TriggerTemplates { get; set; }
     public DbSet<RuleTrigger> RuleTriggers { get; set; }
