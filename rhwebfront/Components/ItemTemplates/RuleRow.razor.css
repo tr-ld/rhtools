@@ -1,0 +1,197 @@
+.rule-card-horizontal {
+    background: var(--cream-bg);
+    border: 2px solid var(--border-medium);
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all var(--theme-transition-duration) var(--theme-transition-easing);
+}
+
+.rule-card-horizontal.has-pending-changes {
+    background: var(--cream-bg);
+    border-left: 4px solid var(--blush-contrast);
+    border-right: 4px solid var(--blush-contrast);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.rule-card-body-horizontal {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    line-height: 2.5rem;
+}
+
+.rule-active-toggle {
+    display: flex;
+    align-items: center;
+    margin-right: 1rem;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 42px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.toggle-slider {
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    transition: background-color var(--theme-transition-duration) var(--theme-transition-easing);
+}
+
+.toggle-slider::before {
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 3px;
+    top: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: transform var(--theme-transition-duration) var(--theme-transition-easing);
+}
+
+.toggle-slider.is-active {
+    background-color: rgba(34, 197, 94, 0.6);
+}
+
+.toggle-slider.is-inactive {
+    background-color: rgba(239, 68, 68, 0.45);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(18px);
+}
+
+.rule-active-toggle input[type="checkbox"] {
+    cursor: pointer;
+    width: 1.125rem;
+    height: 1.125rem;
+}
+
+.rule-active-toggle label {
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--blush-foreground);
+}
+
+.rule-text {
+    color: var(--surface-foreground);
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+.field-select,
+.field-input {
+    padding: 0.5rem;
+    border: 2px solid var(--border-medium);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background: white;
+    color: var(--surface-foreground);
+    transition: all var(--theme-transition-duration) var(--theme-transition-easing);
+    height: 2.5rem;
+}
+
+.field-select {
+    min-width: 120px;
+}
+
+.field-input {
+    width: 80px;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.field-select:focus,
+.field-input:focus {
+    outline: none;
+    border-color: var(--blush-contrast);
+    box-shadow: var(--blush-focus-ring);
+}
+
+.field-select:hover,
+.field-input:hover {
+    border-color: var(--blush-contrast);
+}
+
+.undo-btn {
+    background: var(--cream-bg);
+    border: 2px solid var(--border-medium);
+    border-radius: 6px;
+    padding: 0.375rem 0.75rem;
+    cursor: pointer;
+    font-size: 1.125rem;
+    color: var(--blush-foreground);
+    transition: all var(--theme-transition-duration) var(--theme-transition-easing);
+    font-weight: bold;
+    margin-left: auto;
+}
+
+.undo-btn:hover {
+    background: var(--blush-hover);
+    border-color: var(--blush-contrast);
+    transform: rotate(-15deg) scale(1.1);
+}
+
+.undo-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    display: block;
+    transition: inherit;
+}
+
+.incomplete-rule {
+    color: var(--muted);
+    font-style: italic;
+    padding: 1rem;
+    width: 100%;
+    text-align: center;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+@media (max-width: 1200px) {
+    .rule-card-body-horizontal {
+        line-height: 2rem;
+    }
+    
+    .field-select {
+        min-width: 100px;
+    }
+    
+    .field-input {
+        width: 70px;
+    }
+}
+
+@media (max-width: 768px) {
+    .rule-card-body-horizontal {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .field-select,
+    .field-input {
+        width: 100%;
+    }
+}

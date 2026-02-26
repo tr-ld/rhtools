@@ -118,6 +118,7 @@ namespace RHWebFront
 
                 // Background Service
                 svc.AddHostedService<BidAskPollingService>();
+                svc.AddScoped<RuleEditorStateService>();
 
                 return builder;
             }

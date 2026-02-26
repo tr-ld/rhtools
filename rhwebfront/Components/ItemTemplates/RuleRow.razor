@@ -1,0 +1,220 @@
+@using rhdata.Rules
+@using RHWebFront.Services
+@inject RuleEditorStateService EditorState
+
+<article class="rule-card-horizontal @(HasPendingChanges ? "has-pending-changes" : "")">
+    <div class="rule-card-body-horizontal">
+        <div class="rule-active-toggle">
+            <label class="toggle-switch">
+                <input type="checkbox" checked="@DisplayRule.IsActive" 
+                       @onchange="(e) => UpdateField(r => r.IsActive = (bool)e.Value)" />
+                <span class="toggle-slider @(DisplayRule.IsActive ? "is-active" : "is-inactive")"></span>
+            </label>
+        </div>
+        
+        @if (DisplayRule.Trigger?.TriggerTemplate is not null && DisplayRule.Action?.ActionTemplate is not null)
+        {
+            <span class="rule-text">Triggers on</span>
+            
+            <select class="field-select" value="@DisplayRule.Trigger.TriggerTemplateId" 
+                    @onchange="(e) => UpdateTriggerTemplate(int.Parse(e.Value.ToString()))">
+                @foreach (var template in TriggerTemplates)
+                {
+                    <option value="@template.Id">@template.Name</option>
+                }
+            </select>
+            
+            <input type="number" step="0.01" class="field-input" value="@DisplayRule.Trigger.Value" 
+                   @onchange="(e) => UpdateField(r => r.Trigger.Value = decimal.Parse(e.Value.ToString()))" />
+            
+            <span class="rule-text"> checked every</span>
+            
+            <input type="number" class="field-input" value="@DisplayRule.Precision.Value" 
+                   @onchange="(e) => UpdateField(r => r.Precision.Value = int.Parse(e.Value.ToString()))" />
+            
+            <select class="field-select" value="@DisplayRule.Precision.PrecisionTemplateId" 
+                    @onchange="(e) => UpdatePrecisionTemplate(int.Parse(e.Value.ToString()))">
+                @foreach (var template in PrecisionTemplates)
+                {
+                    <option value="@template.Id">@template.Name</option>
+                }
+            </select>
+            
+            <span class="rule-text">. When triggered</span>
+            
+            <select class="field-select" value="@DisplayRule.Action.ActionTemplateId" 
+                    @onchange="(e) => UpdateActionTemplate(int.Parse(e.Value.ToString()))">
+                @foreach (var template in ActionTemplates)
+                {
+                    <option value="@template.Id">@template.Name</option>
+                }
+            </select>
+            
+            <span class="rule-text">at</span>
+            
+            <input type="number" step="0.01" class="field-input" value="@DisplayRule.Action.Value" 
+                   @onchange="(e) => UpdateField(r => r.Action.Value = decimal.Parse(e.Value.ToString()))" />
+            
+            <span class="rule-text"> trading</span>
+            
+            <input type="number" step="0.01" class="field-input" value="@DisplayRule.Amount.Value" 
+                   @onchange="(e) => UpdateField(r => r.Amount.Value = decimal.Parse(e.Value.ToString()))" />
+            
+            <select class="field-select" value="@DisplayRule.Amount.AmountTemplateId" 
+                    @onchange="(e) => UpdateAmountTemplate(int.Parse(e.Value.ToString()))">
+                @foreach (var template in AmountTemplates)
+                {
+                    <option value="@template.Id">@template.Name</option>
+                }
+            </select>
+            
+            <span class="rule-text">assets</span>
+        }
+        else
+        {
+            <div class="incomplete-rule">Incomplete rule configuration</div>
+        }
+        
+        @if (HasPendingChanges)
+        {
+            <button class="undo-btn" @onclick="Undo" title="Undo changes">
+                <img src="/icons/undo.svg" alt="Undo" class="undo-icon"/>
+            </button>
+        }
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public Rule OriginalRule { get; set; }
+    [Parameter, EditorRequired] public List<TriggerTemplate> TriggerTemplates { get; set; }
+    [Parameter, EditorRequired] public List<ActionTemplate> ActionTemplates { get; set; }
+    [Parameter, EditorRequired] public List<PrecisionTemplate> PrecisionTemplates { get; set; }
+    [Parameter, EditorRequired] public List<AmountTemplate> AmountTemplates { get; set; }
+    [Parameter, EditorRequired] public EventCallback<(int ruleId, bool hasChanges)> OnPendingStateChanged { get; set; }
+    
+    private bool HasPendingChanges => EditorState.HasPendingChanges(OriginalRule.Id);
+    private Rule DisplayRule => EditorState.GetPendingRule(OriginalRule.Id) ?? OriginalRule;
+
+    private void UpdateField(Action<Rule> updateAction)
+    {
+        var pendingRule = EditorState.GetPendingRule(OriginalRule.Id) ?? DeepCopyRule(OriginalRule);
+        updateAction(pendingRule);
+        EditorState.TrackChange(OriginalRule.Id, pendingRule);
+        CheckIfBackToOriginal();
+    }
+
+    private void UpdateTriggerTemplate(int templateId)
+    {
+        var pendingRule = EditorState.GetPendingRule(OriginalRule.Id) ?? DeepCopyRule(OriginalRule);
+        var template = TriggerTemplates.First(t => t.Id == templateId);
+        pendingRule.Trigger.TriggerTemplateId = templateId;
+        pendingRule.Trigger.TriggerTemplate = template;
+        EditorState.TrackChange(OriginalRule.Id, pendingRule);
+        CheckIfBackToOriginal();
+    }
+
+    private void UpdateActionTemplate(int templateId)
+    {
+        var pendingRule = EditorState.GetPendingRule(OriginalRule.Id) ?? DeepCopyRule(OriginalRule);
+        var template = ActionTemplates.First(t => t.Id == templateId);
+        pendingRule.Action.ActionTemplateId = templateId;
+        pendingRule.Action.ActionTemplate = template;
+        EditorState.TrackChange(OriginalRule.Id, pendingRule);
+        CheckIfBackToOriginal();
+    }
+
+    private void UpdatePrecisionTemplate(int templateId)
+    {
+        var pendingRule = EditorState.GetPendingRule(OriginalRule.Id) ?? DeepCopyRule(OriginalRule);
+        var template = PrecisionTemplates.First(t => t.Id == templateId);
+        pendingRule.Precision.PrecisionTemplateId = templateId;
+        pendingRule.Precision.PrecisionTemplate = template;
+        EditorState.TrackChange(OriginalRule.Id, pendingRule);
+        CheckIfBackToOriginal();
+    }
+
+    private void UpdateAmountTemplate(int templateId)
+    {
+        var pendingRule = EditorState.GetPendingRule(OriginalRule.Id) ?? DeepCopyRule(OriginalRule);
+        var template = AmountTemplates.First(t => t.Id == templateId);
+        pendingRule.Amount.AmountTemplateId = templateId;
+        pendingRule.Amount.AmountTemplate = template;
+        EditorState.TrackChange(OriginalRule.Id, pendingRule);
+        CheckIfBackToOriginal();
+    }
+
+    private void CheckIfBackToOriginal()
+    {
+        if (OriginalRule.Id < 0) return;
+        
+        if (EditorState.GetPendingRule(OriginalRule.Id) is { } pendingRule && RulesAreEqual(OriginalRule, pendingRule))
+        {
+            EditorState.UndoChanges(OriginalRule.Id);
+            OnPendingStateChanged.InvokeAsync((OriginalRule.Id, false));
+        }
+        else { OnPendingStateChanged.InvokeAsync((OriginalRule.Id, true)); }
+    }
+
+    private bool RulesAreEqual(Rule rule1, Rule rule2)
+    {
+        return rule1.IsActive == rule2.IsActive &&
+               rule1.Trigger.TriggerTemplateId == rule2.Trigger.TriggerTemplateId &&
+               rule1.Trigger.Value == rule2.Trigger.Value &&
+               rule1.Action.ActionTemplateId == rule2.Action.ActionTemplateId &&
+               rule1.Action.Value == rule2.Action.Value &&
+               rule1.Precision.PrecisionTemplateId == rule2.Precision.PrecisionTemplateId &&
+               rule1.Precision.Value == rule2.Precision.Value &&
+               rule1.Amount.AmountTemplateId == rule2.Amount.AmountTemplateId &&
+               rule1.Amount.Value == rule2.Amount.Value;
+    }
+
+    private Rule DeepCopyRule(Rule rule)
+    {
+        return new Rule
+        {
+            Id = rule.Id,
+            RuleSetId = rule.RuleSetId,
+            Position = rule.Position,
+            TriggerId = rule.TriggerId,
+            ActionId = rule.ActionId,
+            PrecisionId = rule.PrecisionId,
+            AmountId = rule.AmountId,
+            IsActive = rule.IsActive,
+            CreatedAt = rule.CreatedAt,
+            UpdatedAt = rule.UpdatedAt,
+            Trigger = new RuleTrigger 
+            { 
+                Id = rule.Trigger.Id,
+                TriggerTemplateId = rule.Trigger.TriggerTemplateId,
+                TriggerTemplate = rule.Trigger.TriggerTemplate,
+                Value = rule.Trigger.Value 
+            },
+            Action = new RuleAction 
+            { 
+                Id = rule.Action.Id,
+                ActionTemplateId = rule.Action.ActionTemplateId,
+                ActionTemplate = rule.Action.ActionTemplate,
+                Value = rule.Action.Value 
+            },
+            Precision = new RulePrecision 
+            { 
+                Id = rule.Precision?.Id ?? 0,
+                PrecisionTemplateId = rule.Precision?.PrecisionTemplateId ?? 0,
+                PrecisionTemplate = rule.Precision?.PrecisionTemplate,
+                Value = rule.Precision?.Value ?? 0 
+            },
+            Amount = new RuleAmount 
+            { 
+                Id = rule.Amount?.Id ?? 0,
+                AmountTemplateId = rule.Amount?.AmountTemplateId ?? 0,
+                AmountTemplate = rule.Amount?.AmountTemplate,
+                Value = rule.Amount?.Value ?? 0 
+            }
+        };
+    }
+
+    public void Undo()
+    {
+        EditorState.UndoChanges(OriginalRule.Id);
+    }
+}
