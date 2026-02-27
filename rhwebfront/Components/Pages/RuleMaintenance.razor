@@ -32,7 +32,7 @@
 @if (!string.IsNullOrEmpty(SymbolManager.SelectedSymbol))
 {
     <div class="rules-section">
-        @if (_activeRuleSet is null)
+        @if (RuleManager.ActiveRuleSet is null)
         {
             <div class="loading-state">
                 <p>Loading rules...</p>
@@ -41,16 +41,13 @@
         else
         {
             <div class="rules-container">
-                @if (_activeRuleSet.Rules.Any())
+                @if (RuleManager.ActiveRuleSet.Rules.Any())
                 {
                     <div class="rule-list-horizontal">
                         @foreach (var rule in GetOrderedRules())
                         {
-                            <RuleRow OriginalRule="@rule"
-                                     TriggerTemplates="@_triggerTemplates"
-                                     ActionTemplates="@_actionTemplates"
-                                     PrecisionTemplates="@_precisionTemplates"
-                                     AmountTemplates="@_amountTemplates" />
+                            <RuleRow OriginalRule="@rule" TriggerTemplates="@_triggerTemplates" ActionTemplates="@_actionTemplates" 
+                                     PrecisionTemplates="@_precisionTemplates" AmountTemplates="@_amountTemplates" />
                         }
                     </div>
                 }
@@ -90,8 +87,6 @@ else
     private List<RHTradingPair> _tradingPairs;
     private List<RuleSet> _ruleSets;
     private string _validationError = null;
-
-    private RuleSet _activeRuleSet;
 
     private List<TriggerTemplate> _triggerTemplates = [];
     private List<ActionTemplate> _actionTemplates = [];
@@ -165,12 +160,12 @@ else
 
     private async Task LoadRuleSetForSymbol(string symbol)
     {
-        _activeRuleSet = await RuleManager.GetRuleSetBySymbolAsync(symbol) ?? new RuleSet { Symbol = symbol };
+        RuleManager.ActiveRuleSet = await RuleManager.GetRuleSetBySymbolAsync(symbol) ?? new RuleSet { Symbol = symbol };
         EditorState.Clear();
         StateHasChanged();
     }
 
-    private IEnumerable<Rule> GetOrderedRules() => _activeRuleSet.Rules.OrderBy(r => r.Position);
+    private IEnumerable<Rule> GetOrderedRules() => RuleManager.ActiveRuleSet.Rules.OrderBy(r => r.Position);
 
     protected override void OnInitialized() { EditorState.StateChanged += StateHasChanged; }
 
@@ -182,7 +177,7 @@ else
             return;
         }
 
-        var nextPosition = _activeRuleSet.Rules.Any() ? _activeRuleSet.Rules.Max(r => r.Position) + 1 : 1;
+        var nextPosition = RuleManager.ActiveRuleSet.Rules.Any() ? RuleManager.ActiveRuleSet.Rules.Max(r => r.Position) + 1 : 1;
         var triggerTemplate = _triggerTemplates.First();
         var actionTemplate = _actionTemplates.First();
         var precisionTemplate = _precisionTemplates.First();
@@ -190,8 +185,8 @@ else
         
         var newRule = new Rule
         {
-            Id = -(_activeRuleSet.Rules.Count + 1),
-            RuleSetId = _activeRuleSet.Id,
+            Id = -(RuleManager.ActiveRuleSet.Rules.Count + 1),
+            RuleSetId = RuleManager.ActiveRuleSet.Id,
             IsActive = true,
             Position = nextPosition,
             TriggerId = 0,
@@ -204,7 +199,7 @@ else
             Amount = new RuleAmount { AmountTemplateId = amountTemplate.Id, AmountTemplate = amountTemplate, Value = 0 }
         };
         
-        _activeRuleSet.Rules.Add(newRule);
+        RuleManager.ActiveRuleSet.Rules.Add(newRule);
         EditorState.MarkAsNew(newRule.Id);
         StateHasChanged();
     }
@@ -215,10 +210,10 @@ else
         var newRules = EditorState.GetNewRuleIds().ToList();
         foreach (var ruleId in newRules)
         {
-            var rule = _activeRuleSet.Rules.FirstOrDefault(r => r.Id == ruleId);
+            var rule = RuleManager.ActiveRuleSet.Rules.FirstOrDefault(r => r.Id == ruleId);
             if (rule is null) continue;
 
-            _activeRuleSet.Rules.Remove(rule);
+            RuleManager.ActiveRuleSet.Rules.Remove(rule);
             EditorState.RemoveRule(ruleId);
         }
     }
@@ -228,42 +223,14 @@ else
         foreach (var ruleId in EditorState.GetChangedRuleIds())
         {
             var pendingRule = EditorState.GetPendingRule(ruleId);
-            var originalRule = _activeRuleSet.Rules.First(r => r.Id == ruleId);
-            
-            originalRule.IsActive = pendingRule.IsActive;
-            originalRule.Trigger.TriggerTemplateId = pendingRule.Trigger.TriggerTemplateId;
-            originalRule.Trigger.TriggerTemplate = pendingRule.Trigger.TriggerTemplate;
-            originalRule.Trigger.Value = pendingRule.Trigger.Value;
-            originalRule.Action.ActionTemplateId = pendingRule.Action.ActionTemplateId;
-            originalRule.Action.ActionTemplate = pendingRule.Action.ActionTemplate;
-            originalRule.Action.Value = pendingRule.Action.Value;
-            originalRule.Precision.PrecisionTemplateId = pendingRule.Precision.PrecisionTemplateId;
-            originalRule.Precision.PrecisionTemplate = pendingRule.Precision.PrecisionTemplate;
-            originalRule.Precision.Value = pendingRule.Precision.Value;
-            originalRule.Amount.AmountTemplateId = pendingRule.Amount.AmountTemplateId;
-            originalRule.Amount.AmountTemplate = pendingRule.Amount.AmountTemplate;
-            originalRule.Amount.Value = pendingRule.Amount.Value;
-            
-            if (originalRule.Id < 0)
-            {
-                if (0 == _activeRuleSet.Id) _activeRuleSet = await RuleManager.SaveRuleSetAsync(_activeRuleSet);
-                originalRule.RuleSetId = _activeRuleSet.Id;
-            }
-            
-            await RuleManager.SaveRuleAsync(originalRule);
+            await RuleManager.SaveActiveRuleAsync(ruleId, pendingRule);
         }
         
-        await LoadRuleSetForSymbol(_activeRuleSet.Symbol);
+        await LoadRuleSetForSymbol(RuleManager.ActiveRuleSet.Symbol);
         EditorState.Clear();
     }
     
-    public void Dispose()
-    {
-        EditorState.StateChanged -= StateHasChanged;
-    }
+    public void Dispose() { EditorState.StateChanged -= StateHasChanged; }
 
-    private void ShowSymbolSelector()
-    {
-        SymbolManager.ShowSymbolSelector = !SymbolManager.ShowSymbolSelector;
-    }
+    private void ShowSymbolSelector() { SymbolManager.ShowSymbolSelector = !SymbolManager.ShowSymbolSelector; }
 }

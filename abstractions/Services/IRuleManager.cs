@@ -4,6 +4,7 @@ namespace abstractions.Services;
 
 public interface IRuleManager
 {
+    RuleSet ActiveRuleSet { get; set; }
     Task<List<RuleSet>> GetRuleSetsForTradeCurrencyAsync();
     Task<RuleSet> GetRuleSetBySymbolAsync(string symbol);
     
@@ -14,4 +15,5 @@ public interface IRuleManager
     
     Task<RuleSet> SaveRuleSetAsync(RuleSet ruleSet);
     Task<Rule> SaveRuleAsync(Rule rule);
+    Task SaveActiveRuleAsync(int ruleId, Rule pendingRule);
 }
