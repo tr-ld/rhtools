@@ -2,12 +2,14 @@ using abstractions.Repositories;
 using abstractions.Services;
 using emulation.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using RHWebFront.Components;
 using RHWebFront.Config;
 using RHWebFront.Data;
+using RHWebFront.Data.Migration;
 using RHWebFront.Repositories;
 using RHWebFront.Services;
 
@@ -82,7 +84,8 @@ namespace RHWebFront
 
                 // Database
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=rhtools.db";
-                svc.AddDbContextPool<RhDbContext>(options => options.UseSqlite(connectionString));
+                svc.AddDbContextPool<RhDbContext>(options => 
+                    options.UseSqlite(connectionString).ReplaceService<IMigrationsSqlGenerator, RhToolsSqliteMigrationsSqlGenerator>());
 
                 // Load config early to determine which repositories to register
                 builder.LoadConfig();

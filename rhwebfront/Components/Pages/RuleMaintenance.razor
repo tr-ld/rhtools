@@ -47,7 +47,7 @@
                         @foreach (var rule in GetOrderedRules())
                         {
                             <RuleRow OriginalRule="@rule" TriggerTemplates="@_triggerTemplates" ActionTemplates="@_actionTemplates" 
-                                     PrecisionTemplates="@_precisionTemplates" AmountTemplates="@_amountTemplates" />
+                                     PeriodicityTemplates="@_periodicityTemplates" AmountTemplates="@_amountTemplates" PriceTemplates="@_priceTemplates" />
                         }
                     </div>
                 }
@@ -90,8 +90,9 @@ else
 
     private List<TriggerTemplate> _triggerTemplates = [];
     private List<ActionTemplate> _actionTemplates = [];
-    private List<PrecisionTemplate> _precisionTemplates = [];
+    private List<PeriodicityTemplate> _periodicityTemplates = [];
     private List<AmountTemplate> _amountTemplates = [];
+    private List<PriceTemplate> _priceTemplates = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -100,8 +101,9 @@ else
         
         _triggerTemplates = await RuleManager.GetTriggerTemplatesAsync();
         _actionTemplates = await RuleManager.GetActionTemplatesAsync();
-        _precisionTemplates = await RuleManager.GetPrecisionTemplatesAsync();
+        _periodicityTemplates = await RuleManager.GetPeriodicityTemplatesAsync();
         _amountTemplates = await RuleManager.GetAmountTemplatesAsync();
+        _priceTemplates = await RuleManager.GetPriceTemplatesAsync();
         
         ValidateResolvedSymbol();
     }
@@ -171,7 +173,7 @@ else
 
     private void CreateNewRule()
     {
-        if (!_triggerTemplates.Any() || !_actionTemplates.Any() || !_precisionTemplates.Any() || !_amountTemplates.Any())
+        if (!_triggerTemplates.Any() || !_actionTemplates.Any() || !_periodicityTemplates.Any() || !_amountTemplates.Any() || !_priceTemplates.Any())
         {
             _validationError = "Templates not loaded. Please refresh the page.";
             return;
@@ -180,8 +182,9 @@ else
         var nextPosition = RuleManager.ActiveRuleSet.Rules.Any() ? RuleManager.ActiveRuleSet.Rules.Max(r => r.Position) + 1 : 1;
         var triggerTemplate = _triggerTemplates.First();
         var actionTemplate = _actionTemplates.First();
-        var precisionTemplate = _precisionTemplates.First();
+        var periodicityTemplate = _periodicityTemplates.First();
         var amountTemplate = _amountTemplates.First();
+        var priceTemplate = _priceTemplates.First();
         
         var newRule = new Rule
         {
@@ -191,12 +194,14 @@ else
             Position = nextPosition,
             TriggerId = 0,
             ActionId = 0,
-            PrecisionId = 0,
+            PeriodicityId = 0,
             AmountId = 0,
+            PriceId = 0,
             Trigger = new RuleTrigger { TriggerTemplateId = triggerTemplate.Id, TriggerTemplate = triggerTemplate, Value = 0 },
             Action = new RuleAction { ActionTemplateId = actionTemplate.Id, ActionTemplate = actionTemplate, Value = 0 },
-            Precision = new RulePrecision { PrecisionTemplateId = precisionTemplate.Id, PrecisionTemplate = precisionTemplate, Value = 1 },
-            Amount = new RuleAmount { AmountTemplateId = amountTemplate.Id, AmountTemplate = amountTemplate, Value = 0 }
+            Periodicity = new RulePeriodicity { PeriodicityTemplateId = periodicityTemplate.Id, PeriodicityTemplate = periodicityTemplate, Value = 1 },
+            Amount = new RuleAmount { AmountTemplateId = amountTemplate.Id, AmountTemplate = amountTemplate, Value = 0 },
+            Price = new RulePrice { PriceTemplateId = priceTemplate.Id, PriceTemplate = priceTemplate, Value = 0 }
         };
         
         RuleManager.ActiveRuleSet.Rules.Add(newRule);

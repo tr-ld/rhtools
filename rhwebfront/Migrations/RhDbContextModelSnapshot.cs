@@ -87,64 +87,32 @@ namespace RHWebFront.Migrations
                         {
                             Id = 1,
                             CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Limit sell order at absolute price",
-                            Name = "LimitSellAbsolute",
+                            Description = "Sell order at a specific price",
+                            Name = "Limit Sell",
                             UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
                         },
                         new
                         {
                             Id = 2,
                             CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Limit sell order at price relative to rule creation",
-                            Name = "LimitSellRelativeAtCreate",
+                            Description = "Buy order at a specific price",
+                            Name = "Limit Buy",
                             UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
                         },
                         new
                         {
                             Id = 3,
                             CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Limit sell order at price relative to trigger execution",
-                            Name = "LimitSellRelativeAtExecute",
+                            Description = "Sell order executed immediately at current market price",
+                            Name = "Market Sell",
                             UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
                         },
                         new
                         {
                             Id = 4,
                             CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Limit buy order at absolute price",
-                            Name = "LimitBuyAbsolute",
-                            UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
-                        },
-                        new
-                        {
-                            Id = 5,
-                            CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Limit buy order at price relative to rule creation",
-                            Name = "LimitBuyRelativeAtCreate",
-                            UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
-                        },
-                        new
-                        {
-                            Id = 6,
-                            CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Limit buy order at price relative to trigger execution",
-                            Name = "LimitBuyRelativeAtExecute",
-                            UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
-                        },
-                        new
-                        {
-                            Id = 7,
-                            CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Market sell order executed immediately at current market price",
-                            Name = "MarketSell",
-                            UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
-                        },
-                        new
-                        {
-                            Id = 8,
-                            CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Market buy order executed immediately at current market price",
-                            Name = "MarketBuy",
+                            Description = "Buy order executed immediately at current market price",
+                            Name = "Market Buy",
                             UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
                         });
                 });
@@ -185,7 +153,7 @@ namespace RHWebFront.Migrations
                             Id = 1,
                             CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             Description = "Specific quantity of the asset",
-                            Name = "Absolute",
+                            Name = "Flat",
                             UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
                         },
                         new
@@ -200,13 +168,13 @@ namespace RHWebFront.Migrations
                         {
                             Id = 3,
                             CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "All available holdings",
-                            Name = "All",
+                            Description = "Specific amount of holdings in currency",
+                            Name = "Currency",
                             UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
                         });
                 });
 
-            modelBuilder.Entity("rhdata.Rules.PrecisionTemplate", b =>
+            modelBuilder.Entity("rhdata.Rules.PeriodicityTemplate", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -234,7 +202,7 @@ namespace RHWebFront.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PrecisionTemplates");
+                    b.ToTable("PeriodicityTemplates");
 
                     b.HasData(
                         new
@@ -271,6 +239,63 @@ namespace RHWebFront.Migrations
                         });
                 });
 
+            modelBuilder.Entity("rhdata.Rules.PriceTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("DATETIME('now')");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("DATETIME('now')");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PriceTemplates");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "Specific price point",
+                            Name = "Flat",
+                            UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "Percent offset from market price at rule activation",
+                            Name = "Percent From Create",
+                            UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "Percent offset from market price at trigger execution",
+                            Name = "Percent From Execute",
+                            UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        });
+                });
+
             modelBuilder.Entity("rhdata.Rules.Rule", b =>
                 {
                     b.Property<int>("Id")
@@ -291,10 +316,13 @@ namespace RHWebFront.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("PeriodicityId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Position")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("PrecisionId")
+                    b.Property<int>("PriceId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("RuleSetId")
@@ -314,7 +342,9 @@ namespace RHWebFront.Migrations
 
                     b.HasIndex("AmountId");
 
-                    b.HasIndex("PrecisionId");
+                    b.HasIndex("PeriodicityId");
+
+                    b.HasIndex("PriceId");
 
                     b.HasIndex("RuleSetId");
 
@@ -381,7 +411,7 @@ namespace RHWebFront.Migrations
                     b.ToTable("RuleAmounts");
                 });
 
-            modelBuilder.Entity("rhdata.Rules.RulePrecision", b =>
+            modelBuilder.Entity("rhdata.Rules.RulePeriodicity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -392,7 +422,7 @@ namespace RHWebFront.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("DATETIME('now')");
 
-                    b.Property<int>("PrecisionTemplateId")
+                    b.Property<int>("PeriodicityTemplateId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
@@ -405,9 +435,38 @@ namespace RHWebFront.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PrecisionTemplateId");
+                    b.HasIndex("PeriodicityTemplateId");
 
-                    b.ToTable("RulePrecisions");
+                    b.ToTable("RulePeriodicities");
+                });
+
+            modelBuilder.Entity("rhdata.Rules.RulePrice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("DATETIME('now')");
+
+                    b.Property<int>("PriceTemplateId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("DATETIME('now')");
+
+                    b.Property<decimal>("Value")
+                        .HasColumnType("decimal(38,18)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PriceTemplateId");
+
+                    b.ToTable("RulePrices");
                 });
 
             modelBuilder.Entity("rhdata.Rules.RuleSet", b =>
@@ -501,7 +560,7 @@ namespace RHWebFront.Migrations
                             Id = 1,
                             CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             Description = "Triggers when price decreases by a percentage",
-                            Name = "DownPercent",
+                            Name = "Down Percent",
                             UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
                         },
                         new
@@ -509,23 +568,23 @@ namespace RHWebFront.Migrations
                             Id = 2,
                             CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             Description = "Triggers when price increases by a percentage",
-                            Name = "UpPercent",
+                            Name = "Up Percent",
                             UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
                         },
                         new
                         {
                             Id = 3,
                             CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Triggers when price decreases by an absolute amount",
-                            Name = "DownAbsolute",
+                            Description = "Triggers when price decreases by a flat amount",
+                            Name = "Down Flat",
                             UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
                         },
                         new
                         {
                             Id = 4,
                             CreatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Triggers when price increases by an absolute amount",
-                            Name = "UpAbsolute",
+                            Description = "Triggers when price increases by a flat amount",
+                            Name = "Up Flat",
                             UpdatedAt = new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
                         });
                 });
@@ -635,9 +694,15 @@ namespace RHWebFront.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("rhdata.Rules.RulePrecision", "Precision")
+                    b.HasOne("rhdata.Rules.RulePeriodicity", "Periodicity")
                         .WithMany()
-                        .HasForeignKey("PrecisionId")
+                        .HasForeignKey("PeriodicityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("rhdata.Rules.RulePrice", "Price")
+                        .WithMany()
+                        .HasForeignKey("PriceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -657,7 +722,9 @@ namespace RHWebFront.Migrations
 
                     b.Navigation("Amount");
 
-                    b.Navigation("Precision");
+                    b.Navigation("Periodicity");
+
+                    b.Navigation("Price");
 
                     b.Navigation("RuleSet");
 
@@ -686,15 +753,26 @@ namespace RHWebFront.Migrations
                     b.Navigation("AmountTemplate");
                 });
 
-            modelBuilder.Entity("rhdata.Rules.RulePrecision", b =>
+            modelBuilder.Entity("rhdata.Rules.RulePeriodicity", b =>
                 {
-                    b.HasOne("rhdata.Rules.PrecisionTemplate", "PrecisionTemplate")
+                    b.HasOne("rhdata.Rules.PeriodicityTemplate", "PeriodicityTemplate")
                         .WithMany()
-                        .HasForeignKey("PrecisionTemplateId")
+                        .HasForeignKey("PeriodicityTemplateId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("PrecisionTemplate");
+                    b.Navigation("PeriodicityTemplate");
+                });
+
+            modelBuilder.Entity("rhdata.Rules.RulePrice", b =>
+                {
+                    b.HasOne("rhdata.Rules.PriceTemplate", "PriceTemplate")
+                        .WithMany()
+                        .HasForeignKey("PriceTemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PriceTemplate");
                 });
 
             modelBuilder.Entity("rhdata.Rules.RuleTrigger", b =>

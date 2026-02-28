@@ -11,6 +11,7 @@ namespace rhdata.Rules
         [Required]
         public int AmountTemplateId { get; set; }
 
+        [Required]
         [Column(TypeName = "decimal(38,18)")]
         public decimal Value { get; set; }
 
@@ -18,6 +19,7 @@ namespace rhdata.Rules
         public AmountTemplate AmountTemplate { get; set; } = default!;
 
         public DateTimeOffset CreatedAt { get; set; }
+        
         public DateTimeOffset UpdatedAt { get; set; }
     }
 }

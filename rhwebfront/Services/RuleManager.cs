@@ -34,16 +34,22 @@ public class RuleManager(IRuleRepository repository, IOptionsSnapshot<AppConfig>
         catch (Exception ex) { logger.LogError(ex, "Error loading action templates"); throw; }
     }
 
-    public async Task<List<PrecisionTemplate>> GetPrecisionTemplatesAsync()
+    public async Task<List<PeriodicityTemplate>> GetPeriodicityTemplatesAsync()
     {
-        try { return await repository.GetPrecisionTemplatesAsync(); }
-        catch (Exception ex) { logger.LogError(ex, "Error loading precision templates"); throw; }
+        try { return await repository.GetPeriodicityTemplatesAsync(); }
+        catch (Exception ex) { logger.LogError(ex, "Error loading periodicity templates"); throw; }
     }
 
     public async Task<List<AmountTemplate>> GetAmountTemplatesAsync()
     {
         try { return await repository.GetAmountTemplatesAsync(); }
         catch (Exception ex) { logger.LogError(ex, "Error loading amount templates"); throw; }
+    }
+
+    public async Task<List<PriceTemplate>> GetPriceTemplatesAsync()
+    {
+        try { return await repository.GetPriceTemplatesAsync(); }
+        catch (Exception ex) { logger.LogError(ex, "Error loading price templates"); throw; }
     }
 
     public async Task<RuleSet> SaveRuleSetAsync(RuleSet ruleSet)
@@ -69,12 +75,15 @@ public class RuleManager(IRuleRepository repository, IOptionsSnapshot<AppConfig>
         originalRule.Action.ActionTemplateId = pendingRule.Action.ActionTemplateId;
         originalRule.Action.ActionTemplate = pendingRule.Action.ActionTemplate;
         originalRule.Action.Value = pendingRule.Action.Value;
-        originalRule.Precision.PrecisionTemplateId = pendingRule.Precision.PrecisionTemplateId;
-        originalRule.Precision.PrecisionTemplate = pendingRule.Precision.PrecisionTemplate;
-        originalRule.Precision.Value = pendingRule.Precision.Value;
+        originalRule.Periodicity.PeriodicityTemplateId = pendingRule.Periodicity.PeriodicityTemplateId;
+        originalRule.Periodicity.PeriodicityTemplate = pendingRule.Periodicity.PeriodicityTemplate;
+        originalRule.Periodicity.Value = pendingRule.Periodicity.Value;
         originalRule.Amount.AmountTemplateId = pendingRule.Amount.AmountTemplateId;
         originalRule.Amount.AmountTemplate = pendingRule.Amount.AmountTemplate;
         originalRule.Amount.Value = pendingRule.Amount.Value;
+        originalRule.Price.PriceTemplateId = pendingRule.Price.PriceTemplateId;
+        originalRule.Price.PriceTemplate = pendingRule.Price.PriceTemplate;
+        originalRule.Price.Value = pendingRule.Price.Value;
 
         if (originalRule.Id < 0)
         {

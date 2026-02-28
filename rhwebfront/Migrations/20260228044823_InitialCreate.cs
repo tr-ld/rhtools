@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace RHWebFront.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateRuleTables : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -46,7 +46,24 @@ namespace RHWebFront.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PrecisionTemplates",
+                name: "BidAskHistory",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Symbol = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(38,18)", nullable: false),
+                    SellSpread = table.Column<decimal>(type: "decimal(38,18)", nullable: false),
+                    BuySpread = table.Column<decimal>(type: "decimal(38,18)", nullable: false),
+                    Timestamp = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BidAskHistory", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PeriodicityTemplates",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
@@ -58,22 +75,23 @@ namespace RHWebFront.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PrecisionTemplates", x => x.Id);
+                    table.PrimaryKey("PK_PeriodicityTemplates", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "RuleOrderPositions",
+                name: "PriceTemplates",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Position = table.Column<int>(type: "INTEGER", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    Description = table.Column<string>(type: "TEXT", maxLength: 500, nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false, defaultValueSql: "DATETIME('now')"),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false, defaultValueSql: "DATETIME('now')")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_RuleOrderPositions", x => x.Id);
+                    table.PrimaryKey("PK_PriceTemplates", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -89,6 +107,23 @@ namespace RHWebFront.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_RuleSets", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SymbolWatchlist",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Symbol = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Currency = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false, defaultValue: "USD"),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "DATETIME('now')"),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "DATETIME('now')")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SymbolWatchlist", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -114,6 +149,7 @@ namespace RHWebFront.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     ActionTemplateId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Value = table.Column<decimal>(type: "decimal(38,18)", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false, defaultValueSql: "DATETIME('now')"),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false, defaultValueSql: "DATETIME('now')")
                 },
@@ -151,23 +187,45 @@ namespace RHWebFront.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "RulePrecisions",
+                name: "RulePeriodicities",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    PrecisionTemplateId = table.Column<int>(type: "INTEGER", nullable: false),
+                    PeriodicityTemplateId = table.Column<int>(type: "INTEGER", nullable: false),
                     Value = table.Column<int>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false, defaultValueSql: "DATETIME('now')"),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false, defaultValueSql: "DATETIME('now')")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_RulePrecisions", x => x.Id);
+                    table.PrimaryKey("PK_RulePeriodicities", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_RulePrecisions_PrecisionTemplates_PrecisionTemplateId",
-                        column: x => x.PrecisionTemplateId,
-                        principalTable: "PrecisionTemplates",
+                        name: "FK_RulePeriodicities_PeriodicityTemplates_PeriodicityTemplateId",
+                        column: x => x.PeriodicityTemplateId,
+                        principalTable: "PeriodicityTemplates",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RulePrices",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    PriceTemplateId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Value = table.Column<decimal>(type: "decimal(38,18)", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false, defaultValueSql: "DATETIME('now')"),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false, defaultValueSql: "DATETIME('now')")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RulePrices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RulePrices_PriceTemplates_PriceTemplateId",
+                        column: x => x.PriceTemplateId,
+                        principalTable: "PriceTemplates",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -201,11 +259,12 @@ namespace RHWebFront.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     RuleSetId = table.Column<int>(type: "INTEGER", nullable: false),
-                    PositionId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Position = table.Column<int>(type: "INTEGER", nullable: false),
                     TriggerId = table.Column<int>(type: "INTEGER", nullable: false),
                     ActionId = table.Column<int>(type: "INTEGER", nullable: false),
-                    PrecisionId = table.Column<int>(type: "INTEGER", nullable: false),
+                    PeriodicityId = table.Column<int>(type: "INTEGER", nullable: false),
                     AmountId = table.Column<int>(type: "INTEGER", nullable: false),
+                    PriceId = table.Column<int>(type: "INTEGER", nullable: false),
                     IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false, defaultValueSql: "DATETIME('now')"),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false, defaultValueSql: "DATETIME('now')")
@@ -226,15 +285,15 @@ namespace RHWebFront.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Rules_RuleOrderPositions_PositionId",
-                        column: x => x.PositionId,
-                        principalTable: "RuleOrderPositions",
+                        name: "FK_Rules_RulePeriodicities_PeriodicityId",
+                        column: x => x.PeriodicityId,
+                        principalTable: "RulePeriodicities",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Rules_RulePrecisions_PrecisionId",
-                        column: x => x.PrecisionId,
-                        principalTable: "RulePrecisions",
+                        name: "FK_Rules_RulePrices_PriceId",
+                        column: x => x.PriceId,
+                        principalTable: "RulePrices",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
@@ -256,14 +315,10 @@ namespace RHWebFront.Migrations
                 columns: new[] { "Id", "Description", "Name" },
                 values: new object[,]
                 {
-                    { 1, "Limit sell order at absolute price", "LimitSellAbsolute" },
-                    { 2, "Limit sell order at price relative to rule creation", "LimitSellRelativeAtCreate" },
-                    { 3, "Limit sell order at price relative to trigger execution", "LimitSellRelativeAtExecute" },
-                    { 4, "Limit buy order at absolute price", "LimitBuyAbsolute" },
-                    { 5, "Limit buy order at price relative to rule creation", "LimitBuyRelativeAtCreate" },
-                    { 6, "Limit buy order at price relative to trigger execution", "LimitBuyRelativeAtExecute" },
-                    { 7, "Market sell order executed immediately at current market price", "MarketSell" },
-                    { 8, "Market buy order executed immediately at current market price", "MarketBuy" }
+                    { 1, "Sell order at a specific price", "Limit Sell" },
+                    { 2, "Buy order at a specific price", "Limit Buy" },
+                    { 3, "Sell order executed immediately at current market price", "Market Sell" },
+                    { 4, "Buy order executed immediately at current market price", "Market Buy" }
                 });
 
             migrationBuilder.InsertData(
@@ -271,13 +326,13 @@ namespace RHWebFront.Migrations
                 columns: new[] { "Id", "Description", "Name" },
                 values: new object[,]
                 {
-                    { 1, "Specific quantity of the asset", "Absolute" },
+                    { 1, "Specific quantity of the asset", "Flat" },
                     { 2, "Percentage of available holdings", "Percent" },
-                    { 3, "All available holdings", "All" }
+                    { 3, "Specific amount of holdings in currency", "Currency" }
                 });
 
             migrationBuilder.InsertData(
-                table: "PrecisionTemplates",
+                table: "PeriodicityTemplates",
                 columns: new[] { "Id", "Description", "Name" },
                 values: new object[,]
                 {
@@ -285,6 +340,16 @@ namespace RHWebFront.Migrations
                     { 2, "Evaluate rule every N minutes", "Minutes" },
                     { 3, "Evaluate rule every N hours", "Hours" },
                     { 4, "Evaluate rule every N days", "Days" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "PriceTemplates",
+                columns: new[] { "Id", "Description", "Name" },
+                values: new object[,]
+                {
+                    { 1, "Specific price point", "Flat" },
+                    { 2, "Percent offset from market price at rule activation", "Percent From Create" },
+                    { 3, "Percent offset from market price at trigger execution", "Percent From Execute" }
                 });
 
             migrationBuilder.InsertData(
@@ -305,11 +370,27 @@ namespace RHWebFront.Migrations
                 columns: new[] { "Id", "Description", "Name" },
                 values: new object[,]
                 {
-                    { 1, "Triggers when price decreases by a percentage", "DownPercent" },
-                    { 2, "Triggers when price increases by a percentage", "UpPercent" },
-                    { 3, "Triggers when price decreases by an absolute amount", "DownAbsolute" },
-                    { 4, "Triggers when price increases by an absolute amount", "UpAbsolute" }
+                    { 1, "Triggers when price decreases by a percentage", "Down Percent" },
+                    { 2, "Triggers when price increases by a percentage", "Up Percent" },
+                    { 3, "Triggers when price decreases by a flat amount", "Down Flat" },
+                    { 4, "Triggers when price increases by a flat amount", "Up Flat" }
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BidAskHistory_Symbol",
+                table: "BidAskHistory",
+                column: "Symbol");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BidAskHistory_Symbol_Timestamp",
+                table: "BidAskHistory",
+                columns: new[] { "Symbol", "Timestamp" },
+                descending: new[] { false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BidAskHistory_Timestamp",
+                table: "BidAskHistory",
+                column: "Timestamp");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RuleActions_ActionTemplateId",
@@ -322,9 +403,14 @@ namespace RHWebFront.Migrations
                 column: "AmountTemplateId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RulePrecisions_PrecisionTemplateId",
-                table: "RulePrecisions",
-                column: "PrecisionTemplateId");
+                name: "IX_RulePeriodicities_PeriodicityTemplateId",
+                table: "RulePeriodicities",
+                column: "PeriodicityTemplateId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RulePrices_PriceTemplateId",
+                table: "RulePrices",
+                column: "PriceTemplateId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Rules_ActionId",
@@ -337,14 +423,14 @@ namespace RHWebFront.Migrations
                 column: "AmountId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Rules_PositionId",
+                name: "IX_Rules_PeriodicityId",
                 table: "Rules",
-                column: "PositionId");
+                column: "PeriodicityId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Rules_PrecisionId",
+                name: "IX_Rules_PriceId",
                 table: "Rules",
-                column: "PrecisionId");
+                column: "PriceId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Rules_RuleSetId",
@@ -361,115 +447,29 @@ namespace RHWebFront.Migrations
                 table: "RuleTriggers",
                 column: "TriggerTemplateId");
 
-            // Add triggers to update UpdatedAt on UPDATE for all rule tables
-            migrationBuilder.Sql(@"
-                CREATE TRIGGER SetActionTemplateUpdatedAt
-                AFTER UPDATE ON ActionTemplates
-                FOR EACH ROW
-                BEGIN
-                    UPDATE ActionTemplates SET UpdatedAt = DATETIME('now') WHERE Id = NEW.Id;
-                END;
-            ");
-            migrationBuilder.Sql(@"
-                CREATE TRIGGER SetAmountTemplateUpdatedAt
-                AFTER UPDATE ON AmountTemplates
-                FOR EACH ROW
-                BEGIN
-                    UPDATE AmountTemplates SET UpdatedAt = DATETIME('now') WHERE Id = NEW.Id;
-                END;
-            ");
-            migrationBuilder.Sql(@"
-                CREATE TRIGGER SetPrecisionTemplateUpdatedAt
-                AFTER UPDATE ON PrecisionTemplates
-                FOR EACH ROW
-                BEGIN
-                    UPDATE PrecisionTemplates SET UpdatedAt = DATETIME('now') WHERE Id = NEW.Id;
-                END;
-            ");
-            migrationBuilder.Sql(@"
-                CREATE TRIGGER SetRuleOrderPositionUpdatedAt
-                AFTER UPDATE ON RuleOrderPositions
-                FOR EACH ROW
-                BEGIN
-                    UPDATE RuleOrderPositions SET UpdatedAt = DATETIME('now') WHERE Id = NEW.Id;
-                END;
-            ");
-            migrationBuilder.Sql(@"
-                CREATE TRIGGER SetRuleSetUpdatedAt
-                AFTER UPDATE ON RuleSets
-                FOR EACH ROW
-                BEGIN
-                    UPDATE RuleSets SET UpdatedAt = DATETIME('now') WHERE Id = NEW.Id;
-                END;
-            ");
-            migrationBuilder.Sql(@"
-                CREATE TRIGGER SetTriggerTemplateUpdatedAt
-                AFTER UPDATE ON TriggerTemplates
-                FOR EACH ROW
-                BEGIN
-                    UPDATE TriggerTemplates SET UpdatedAt = DATETIME('now') WHERE Id = NEW.Id;
-                END;
-            ");
-            migrationBuilder.Sql(@"
-                CREATE TRIGGER SetRuleActionUpdatedAt
-                AFTER UPDATE ON RuleActions
-                FOR EACH ROW
-                BEGIN
-                    UPDATE RuleActions SET UpdatedAt = DATETIME('now') WHERE Id = NEW.Id;
-                END;
-            ");
-            migrationBuilder.Sql(@"
-                CREATE TRIGGER SetRuleAmountUpdatedAt
-                AFTER UPDATE ON RuleAmounts
-                FOR EACH ROW
-                BEGIN
-                    UPDATE RuleAmounts SET UpdatedAt = DATETIME('now') WHERE Id = NEW.Id;
-                END;
-            ");
-            migrationBuilder.Sql(@"
-                CREATE TRIGGER SetRulePrecisionUpdatedAt
-                AFTER UPDATE ON RulePrecisions
-                FOR EACH ROW
-                BEGIN
-                    UPDATE RulePrecisions SET UpdatedAt = DATETIME('now') WHERE Id = NEW.Id;
-                END;
-            ");
-            migrationBuilder.Sql(@"
-                CREATE TRIGGER SetRuleTriggerUpdatedAt
-                AFTER UPDATE ON RuleTriggers
-                FOR EACH ROW
-                BEGIN
-                    UPDATE RuleTriggers SET UpdatedAt = DATETIME('now') WHERE Id = NEW.Id;
-                END;
-            ");
-            migrationBuilder.Sql(@"
-                CREATE TRIGGER SetRuleUpdatedAt
-                AFTER UPDATE ON Rules
-                FOR EACH ROW
-                BEGIN
-                    UPDATE Rules SET UpdatedAt = DATETIME('now') WHERE Id = NEW.Id;
-                END;
-            ");
+            migrationBuilder.CreateIndex(
+                name: "IX_SymbolWatchlist_IsActive",
+                table: "SymbolWatchlist",
+                column: "IsActive");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SymbolWatchlist_Symbol_Currency",
+                table: "SymbolWatchlist",
+                columns: new[] { "Symbol", "Currency" },
+                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Drop triggers for all rule tables
-            migrationBuilder.Sql("DROP TRIGGER IF EXISTS SetActionTemplateUpdatedAt;");
-            migrationBuilder.Sql("DROP TRIGGER IF EXISTS SetAmountTemplateUpdatedAt;");
-            migrationBuilder.Sql("DROP TRIGGER IF EXISTS SetPrecisionTemplateUpdatedAt;");
-            migrationBuilder.Sql("DROP TRIGGER IF EXISTS SetRuleOrderPositionUpdatedAt;");
-            migrationBuilder.Sql("DROP TRIGGER IF EXISTS SetRuleSetUpdatedAt;");
-            migrationBuilder.Sql("DROP TRIGGER IF EXISTS SetTriggerTemplateUpdatedAt;");
-            migrationBuilder.Sql("DROP TRIGGER IF EXISTS SetRuleActionUpdatedAt;");
-            migrationBuilder.Sql("DROP TRIGGER IF EXISTS SetRuleAmountUpdatedAt;");
-            migrationBuilder.Sql("DROP TRIGGER IF EXISTS SetRulePrecisionUpdatedAt;");
-            migrationBuilder.Sql("DROP TRIGGER IF EXISTS SetRuleTriggerUpdatedAt;");
-            migrationBuilder.Sql("DROP TRIGGER IF EXISTS SetRuleUpdatedAt;");
+            migrationBuilder.DropTable(
+                name: "BidAskHistory");
 
             migrationBuilder.DropTable(
                 name: "Rules");
+
+            migrationBuilder.DropTable(
+                name: "SymbolWatchlist");
 
             migrationBuilder.DropTable(
                 name: "RuleActions");
@@ -478,10 +478,10 @@ namespace RHWebFront.Migrations
                 name: "RuleAmounts");
 
             migrationBuilder.DropTable(
-                name: "RuleOrderPositions");
+                name: "RulePeriodicities");
 
             migrationBuilder.DropTable(
-                name: "RulePrecisions");
+                name: "RulePrices");
 
             migrationBuilder.DropTable(
                 name: "RuleSets");
@@ -496,40 +496,13 @@ namespace RHWebFront.Migrations
                 name: "AmountTemplates");
 
             migrationBuilder.DropTable(
-                name: "PrecisionTemplates");
+                name: "PeriodicityTemplates");
+
+            migrationBuilder.DropTable(
+                name: "PriceTemplates");
 
             migrationBuilder.DropTable(
                 name: "TriggerTemplates");
-
-            migrationBuilder.DeleteData(
-                table: "SymbolWatchlist",
-                keyColumn: "Id",
-                keyValue: 1);
-
-            migrationBuilder.DeleteData(
-                table: "SymbolWatchlist",
-                keyColumn: "Id",
-                keyValue: 2);
-
-            migrationBuilder.DeleteData(
-                table: "SymbolWatchlist",
-                keyColumn: "Id",
-                keyValue: 3);
-
-            migrationBuilder.DeleteData(
-                table: "SymbolWatchlist",
-                keyColumn: "Id",
-                keyValue: 4);
-
-            migrationBuilder.DeleteData(
-                table: "SymbolWatchlist",
-                keyColumn: "Id",
-                keyValue: 5);
-
-            migrationBuilder.DeleteData(
-                table: "SymbolWatchlist",
-                keyColumn: "Id",
-                keyValue: 6);
         }
     }
 }

@@ -76,27 +76,27 @@ else
             </div>
 
             <div class="template-column">
-                <label>Precision</label>
-                @if (_precisionTemplates is null) { <p>Loading...</p> }
+                <label>Periodicity</label>
+                @if (_periodicityTemplates is null) { <p>Loading...</p> }
                 else
                 {
                     <div class="template-list">
-                        @foreach (var template in _precisionTemplates)
+                        @foreach (var template in _periodicityTemplates)
                         {
-                            var isSelected = _selectedPrecisionId == template.Id;
+                            var isSelected = _selectedPeriodicityId == template.Id;
                             
-                            <div class="template-item @(isSelected ? "selected" : "")" @onclick="() => SelectPrecision(template)" title="@template.Description">
+                            <div class="template-item @(isSelected ? "selected" : "")" @onclick="() => SelectPeriodicity(template)" title="@template.Description">
                                 <span>@template.Name</span>
                                 @if (isSelected) { <span class="check">&#10003;</span> }
                             </div>
                         }
                     </div>
                     
-                    @if (_selectedPrecisionId is not null)
+                    @if (_selectedPeriodicityId is not null)
                     {
                         <div class="value-input">
-                            <label>Precision Value</label>
-                            <input type="number" @bind="_precisionValue" />
+                            <label>Periodicity Value</label>
+                            <input type="number" @bind="_periodicityValue" />
                         </div>
                     }
                 }
@@ -145,23 +145,23 @@ else
     public bool IsNewRule { get; set; }
     
     [Parameter]
-    public EventCallback<(Rule rule, RuleTrigger trigger, RuleAction action, RulePrecision precision, RuleAmount amount)> OnSave { get; set; }
+    public EventCallback<(Rule rule, RuleTrigger trigger, RuleAction action, RulePeriodicity periodicity, RuleAmount amount)> OnSave { get; set; }
     
     [Parameter]
     public EventCallback OnCancel { get; set; }
 
     private List<TriggerTemplate> _triggerTemplates;
     private List<ActionTemplate> _actionTemplates;
-    private List<PrecisionTemplate> _precisionTemplates;
+    private List<PeriodicityTemplate> _periodicityTemplates;
     private List<AmountTemplate> _amountTemplates;
 
     private int? _selectedTriggerId;
     private int? _selectedActionId;
-    private int? _selectedPrecisionId;
+    private int? _selectedPeriodicityId;
     private int? _selectedAmountId;
     private decimal _triggerValue;
     private decimal _actionValue;
-    private int _precisionValue;
+    private int _periodicityValue;
     private decimal _amountValue;
     private List<string> _validationErrors = [];
 
@@ -169,7 +169,7 @@ else
     {
         _triggerTemplates = await RuleManager.GetTriggerTemplatesAsync();
         _actionTemplates = await RuleManager.GetActionTemplatesAsync();
-        _precisionTemplates = await RuleManager.GetPrecisionTemplatesAsync();
+        _periodicityTemplates = await RuleManager.GetPeriodicityTemplatesAsync();
         _amountTemplates = await RuleManager.GetAmountTemplatesAsync();
     }
 
@@ -189,12 +189,12 @@ else
     {
         _selectedTriggerId = rule.Trigger?.TriggerTemplateId;
         _selectedActionId = rule.Action?.ActionTemplateId;
-        _selectedPrecisionId = rule.Precision?.PrecisionTemplateId;
+        _selectedPeriodicityId = rule.Periodicity?.PeriodicityTemplateId;
         _selectedAmountId = rule.Amount?.AmountTemplateId;
         
         _triggerValue = rule.Trigger?.Value ?? 0;
         _actionValue = rule.Action?.Value ?? 0;
-        _precisionValue = rule.Precision?.Value ?? 0;
+        _periodicityValue = rule.Periodicity?.Value ?? 0;
         _amountValue = rule.Amount?.Value ?? 0;
         
         _validationErrors.Clear();
@@ -204,11 +204,11 @@ else
     {
         _selectedTriggerId = null;
         _selectedActionId = null;
-        _selectedPrecisionId = null;
+        _selectedPeriodicityId = null;
         _selectedAmountId = null;
         _triggerValue = 0;
         _actionValue = 0;
-        _precisionValue = 0;
+        _periodicityValue = 0;
         _amountValue = 0;
         _validationErrors.Clear();
     }
@@ -225,9 +225,9 @@ else
         _validationErrors.Clear();
     }
 
-    private void SelectPrecision(PrecisionTemplate template)
+    private void SelectPeriodicity(PeriodicityTemplate template)
     {
-        _selectedPrecisionId = template.Id;
+        _selectedPeriodicityId = template.Id;
         _validationErrors.Clear();
     }
 
@@ -243,10 +243,10 @@ else
 
         var trigger = new RuleTrigger { TriggerTemplateId = _selectedTriggerId.Value, Value = _triggerValue };
         var action = new RuleAction { ActionTemplateId = _selectedActionId.Value, Value = _actionValue };
-        var precision = new RulePrecision { PrecisionTemplateId = _selectedPrecisionId.Value, Value = _precisionValue };
+        var periodicity = new RulePeriodicity { PeriodicityTemplateId = _selectedPeriodicityId.Value, Value = _periodicityValue };
         var amount = new RuleAmount { AmountTemplateId = _selectedAmountId.Value, Value = _amountValue };
 
-        await OnSave.InvokeAsync((EditingRule, trigger, action, precision, amount));
+        await OnSave.InvokeAsync((EditingRule, trigger, action, periodicity, amount));
     }
 
     private async Task HandleCancel()
@@ -260,7 +260,7 @@ else
 
         if (_selectedTriggerId is null) _validationErrors.Add("Trigger must be selected");
         if (_selectedActionId is null) _validationErrors.Add("Action must be selected");
-        if (_selectedPrecisionId is null) _validationErrors.Add("Precision must be selected");
+        if (_selectedPeriodicityId is null) _validationErrors.Add("Periodicity must be selected");
         if (_selectedAmountId is null) _validationErrors.Add("Amount must be selected");
 
         return !_validationErrors.Any();

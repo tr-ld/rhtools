@@ -16,6 +16,7 @@ namespace rhdata.Rules
         public string Description { get; set; } = default!;
 
         public DateTimeOffset CreatedAt { get; set; }
+        
         public DateTimeOffset UpdatedAt { get; set; }
     }
 }

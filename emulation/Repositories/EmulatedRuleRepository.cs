@@ -8,14 +8,16 @@ public class EmulatedRuleRepository : IRuleRepository
     private readonly List<RuleSet> _ruleSets = EmulatedRuleData.RuleSets;
     private readonly List<TriggerTemplate> _triggerTemplates = EmulatedRuleData.TriggerTemplates;
     private readonly List<ActionTemplate> _actionTemplates = EmulatedRuleData.ActionTemplates;
-    private readonly List<PrecisionTemplate> _precisionTemplates = EmulatedRuleData.PrecisionTemplates;
+    private readonly List<PeriodicityTemplate> _periodicityTemplates = EmulatedRuleData.PeriodicityTemplates;
     private readonly List<AmountTemplate> _amountTemplates = EmulatedRuleData.AmountTemplates;
+    private readonly List<PriceTemplate> _priceTemplates = EmulatedRuleData.PriceTemplates;
     private int _nextRuleSetId = 4;
     private int _nextRuleId = 5;
     private int _nextTriggerId = 5;
     private int _nextActionId = 5;
-    private int _nextPrecisionId = 5;
+    private int _nextPeriodicityId = 5;
     private int _nextAmountId = 5;
+    private int _nextPriceId = 5;
 
     public Task<List<RuleSet>> GetAllRuleSetsWithRelatedDataAsync(CancellationToken ct = default)
     {
@@ -43,14 +45,19 @@ public class EmulatedRuleRepository : IRuleRepository
         return Task.FromResult(_actionTemplates.ToList());
     }
 
-    public Task<List<PrecisionTemplate>> GetPrecisionTemplatesAsync(CancellationToken ct = default)
+    public Task<List<PeriodicityTemplate>> GetPeriodicityTemplatesAsync(CancellationToken ct = default)
     {
-        return Task.FromResult(_precisionTemplates.ToList());
+        return Task.FromResult(_periodicityTemplates.ToList());
     }
 
     public Task<List<AmountTemplate>> GetAmountTemplatesAsync(CancellationToken ct = default)
     {
         return Task.FromResult(_amountTemplates.ToList());
+    }
+
+    public Task<List<PriceTemplate>> GetPriceTemplatesAsync(CancellationToken ct = default)
+    {
+        return Task.FromResult(_priceTemplates.ToList());
     }
 
     public Task<RuleSet> SaveRuleSetAsync(RuleSet ruleSet, CancellationToken ct = default)
@@ -106,13 +113,13 @@ public class EmulatedRuleRepository : IRuleRepository
                 rule.Action.ActionTemplate = _actionTemplates.FirstOrDefault(a => a.Id == rule.Action.ActionTemplateId);
             }
 
-            if (rule.Precision is not null && rule.Precision.Id == 0)
+            if (rule.Periodicity is not null && rule.Periodicity.Id == 0)
             {
-                rule.Precision.Id = _nextPrecisionId++;
-                rule.PrecisionId = rule.Precision.Id;
-                rule.Precision.CreatedAt = now;
-                rule.Precision.UpdatedAt = now;
-                rule.Precision.PrecisionTemplate = _precisionTemplates.FirstOrDefault(p => p.Id == rule.Precision.PrecisionTemplateId);
+                rule.Periodicity.Id = _nextPeriodicityId++;
+                rule.PeriodicityId = rule.Periodicity.Id;
+                rule.Periodicity.CreatedAt = now;
+                rule.Periodicity.UpdatedAt = now;
+                rule.Periodicity.PeriodicityTemplate = _periodicityTemplates.FirstOrDefault(p => p.Id == rule.Periodicity.PeriodicityTemplateId);
             }
 
             if (rule.Amount is not null && rule.Amount.Id == 0)
@@ -123,6 +130,15 @@ public class EmulatedRuleRepository : IRuleRepository
                 rule.Amount.UpdatedAt = now;
                 rule.Amount.AmountTemplate = _amountTemplates.FirstOrDefault(a => a.Id == rule.Amount.AmountTemplateId);
             }
+
+            if (rule.Price is not null && rule.Price.Id == 0)
+            {
+                rule.Price.Id = _nextPriceId++;
+                rule.PriceId = rule.Price.Id;
+                rule.Price.CreatedAt = now;
+                rule.Price.UpdatedAt = now;
+                rule.Price.PriceTemplate = _priceTemplates.FirstOrDefault(p => p.Id == rule.Price.PriceTemplateId);
+            }
         }
         else
         {
@@ -130,8 +146,9 @@ public class EmulatedRuleRepository : IRuleRepository
 
             rule.Trigger?.UpdatedAt = now;
             rule.Action?.UpdatedAt = now;
-            rule.Precision?.UpdatedAt = now;
+            rule.Periodicity?.UpdatedAt = now;
             rule.Amount?.UpdatedAt = now;
+            rule.Price?.UpdatedAt = now;
 
             var ruleSet = _ruleSets.FirstOrDefault(rs => rs.Id == rule.RuleSetId);
             if (ruleSet is null) return Task.FromResult(rule);

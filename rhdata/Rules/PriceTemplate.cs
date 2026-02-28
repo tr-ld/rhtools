@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace rhdata.Rules
 {
-    public class PrecisionTemplate
+    public class PriceTemplate
     {
         [Key]
         public int Id { get; set; }
@@ -16,6 +16,7 @@ namespace rhdata.Rules
         public string Description { get; set; } = default!;
 
         public DateTimeOffset CreatedAt { get; set; }
+        
         public DateTimeOffset UpdatedAt { get; set; }
     }
 }

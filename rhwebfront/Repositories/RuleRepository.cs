@@ -13,8 +13,9 @@ public class RuleRepository(RhDbContext context) : IRuleRepository
             .Include(rs => rs.Rules)
             .Include(rs => rs.Rules).ThenInclude(r => r.Trigger).ThenInclude(t => t.TriggerTemplate)
             .Include(rs => rs.Rules).ThenInclude(r => r.Action).ThenInclude(a => a.ActionTemplate)
-            .Include(rs => rs.Rules).ThenInclude(r => r.Precision).ThenInclude(p => p.PrecisionTemplate)
+            .Include(rs => rs.Rules).ThenInclude(r => r.Periodicity).ThenInclude(p => p.PeriodicityTemplate)
             .Include(rs => rs.Rules).ThenInclude(r => r.Amount).ThenInclude(a => a.AmountTemplate)
+            .Include(rs => rs.Rules).ThenInclude(r => r.Price).ThenInclude(p => p.PriceTemplate)
             .OrderBy(rs => rs.Symbol)
             .ToListAsync(ct);
     }
@@ -25,8 +26,9 @@ public class RuleRepository(RhDbContext context) : IRuleRepository
             .Include(rs => rs.Rules)
             .Include(rs => rs.Rules).ThenInclude(r => r.Trigger).ThenInclude(t => t.TriggerTemplate)
             .Include(rs => rs.Rules).ThenInclude(r => r.Action).ThenInclude(a => a.ActionTemplate)
-            .Include(rs => rs.Rules).ThenInclude(r => r.Precision).ThenInclude(p => p.PrecisionTemplate)
+            .Include(rs => rs.Rules).ThenInclude(r => r.Periodicity).ThenInclude(p => p.PeriodicityTemplate)
             .Include(rs => rs.Rules).ThenInclude(r => r.Amount).ThenInclude(a => a.AmountTemplate)
+            .Include(rs => rs.Rules).ThenInclude(r => r.Price).ThenInclude(p => p.PriceTemplate)
             .FirstOrDefaultAsync(rs => rs.Symbol == symbol, ct);
     }
 
@@ -39,9 +41,11 @@ public class RuleRepository(RhDbContext context) : IRuleRepository
 
     public async Task<List<ActionTemplate>> GetActionTemplatesAsync(CancellationToken ct = default) => await context.ActionTemplates.OrderBy(a => a.Name).ToListAsync(ct);
 
-    public async Task<List<PrecisionTemplate>> GetPrecisionTemplatesAsync(CancellationToken ct = default) => await context.PrecisionTemplates.OrderBy(p => p.Name).ToListAsync(ct);
+    public async Task<List<PeriodicityTemplate>> GetPeriodicityTemplatesAsync(CancellationToken ct = default) => await context.PeriodicityTemplates.OrderBy(p => p.Name).ToListAsync(ct);
 
     public async Task<List<AmountTemplate>> GetAmountTemplatesAsync(CancellationToken ct = default) => await context.AmountTemplates.OrderBy(a => a.Name).ToListAsync(ct);
+
+    public async Task<List<PriceTemplate>> GetPriceTemplatesAsync(CancellationToken ct = default) => await context.PriceTemplates.OrderBy(p => p.Name).ToListAsync(ct);
 
     public async Task<RuleSet> SaveRuleSetAsync(RuleSet ruleSet, CancellationToken ct = default)
     {
@@ -72,8 +76,9 @@ public class RuleRepository(RhDbContext context) : IRuleRepository
 
             rule.Trigger?.CreatedAt = now;
             rule.Action?.CreatedAt = now;
-            rule.Precision?.CreatedAt = now;
+            rule.Periodicity?.CreatedAt = now;
             rule.Amount?.CreatedAt = now;
+            rule.Price?.CreatedAt = now;
 
             context.Rules.Add(rule);
         }
@@ -83,8 +88,9 @@ public class RuleRepository(RhDbContext context) : IRuleRepository
 
             rule.Trigger?.UpdatedAt = now;
             rule.Action?.UpdatedAt = now;
-            rule.Precision?.UpdatedAt = now;
+            rule.Periodicity?.UpdatedAt = now;
             rule.Amount?.UpdatedAt = now;
+            rule.Price?.UpdatedAt = now;
 
             context.Rules.Update(rule);
         }

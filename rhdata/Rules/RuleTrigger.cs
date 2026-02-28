@@ -11,6 +11,7 @@ namespace rhdata.Rules
         [Required]
         public int TriggerTemplateId { get; set; }
 
+        [Required]
         [Column(TypeName = "decimal(18,4)")]
         public decimal Value { get; set; }
 
@@ -18,6 +19,7 @@ namespace rhdata.Rules
         public TriggerTemplate TriggerTemplate { get; set; } = default!;
 
         public DateTimeOffset CreatedAt { get; set; }
+        
         public DateTimeOffset UpdatedAt { get; set; }
     }
 }

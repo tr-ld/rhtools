@@ -10,8 +10,9 @@ public interface IRuleManager
     
     Task<List<TriggerTemplate>> GetTriggerTemplatesAsync();
     Task<List<ActionTemplate>> GetActionTemplatesAsync();
-    Task<List<PrecisionTemplate>> GetPrecisionTemplatesAsync();
+    Task<List<PeriodicityTemplate>> GetPeriodicityTemplatesAsync();
     Task<List<AmountTemplate>> GetAmountTemplatesAsync();
+    Task<List<PriceTemplate>> GetPriceTemplatesAsync();
     
     Task<RuleSet> SaveRuleSetAsync(RuleSet ruleSet);
     Task<Rule> SaveRuleAsync(Rule rule);

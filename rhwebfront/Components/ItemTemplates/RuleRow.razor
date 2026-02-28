@@ -14,7 +14,7 @@
         
         @if (DisplayRule.Trigger?.TriggerTemplate is not null && DisplayRule.Action?.ActionTemplate is not null)
         {
-            <span class="rule-text">Triggers on</span>
+            <span class="rule-text">Triggers when market price is</span>
             <select class="field-select" value="@DisplayRule.Trigger.TriggerTemplateId" 
                     @onchange="(e) => UpdateTriggerTemplate(int.Parse(e.Value.ToString()))">
                 @foreach (var template in TriggerTemplates) { <option value="@template.Id">@template.Name</option> }
@@ -22,32 +22,43 @@
             <input type="number" step="0.01" class="field-input" value="@DisplayRule.Trigger.Value" 
                    @onchange="(e) => UpdateField(r => r.Trigger.Value = decimal.Parse(e.Value.ToString()))" />
             
-            <span class="rule-text"> checked every</span>
-            <input type="number" class="field-input" value="@DisplayRule.Precision.Value" 
-                   @onchange="(e) => UpdateField(r => r.Precision.Value = int.Parse(e.Value.ToString()))" />
-            <select class="field-select" value="@DisplayRule.Precision.PrecisionTemplateId" 
-                    @onchange="(e) => UpdatePrecisionTemplate(int.Parse(e.Value.ToString()))">
-                @foreach (var template in PrecisionTemplates) { <option value="@template.Id">@template.Name</option> }
+            <span class="rule-text">. It is checked every</span>
+            <input type="number" class="field-input" value="@DisplayRule.Periodicity.Value" 
+                   @onchange="(e) => UpdateField(r => r.Periodicity.Value = int.Parse(e.Value.ToString()))" />
+            <select class="field-select" value="@DisplayRule.Periodicity.PeriodicityTemplateId" 
+                    @onchange="(e) => UpdatePeriodicityTemplate(int.Parse(e.Value.ToString()))">
+                @foreach (var template in PeriodicityTemplates) { <option value="@template.Id">@template.Name</option> }
             </select>
+            <span class="rule-text">. When triggered, execute a</span>
             
-            <span class="rule-text">. When triggered</span>
             <select class="field-select" value="@DisplayRule.Action.ActionTemplateId" 
                     @onchange="(e) => UpdateActionTemplate(int.Parse(e.Value.ToString()))">
                 @foreach (var template in ActionTemplates) { <option value="@template.Id">@template.Name</option> }
             </select>
             <span class="rule-text">at</span>
-            <input type="number" step="0.01" class="field-input" value="@DisplayRule.Action.Value" 
-                   @onchange="(e) => UpdateField(r => r.Action.Value = decimal.Parse(e.Value.ToString()))" />
-            
-            <span class="rule-text"> trading</span>
             <input type="number" step="0.01" class="field-input" value="@DisplayRule.Amount.Value" 
                    @onchange="(e) => UpdateField(r => r.Amount.Value = decimal.Parse(e.Value.ToString()))" />
             <select class="field-select" value="@DisplayRule.Amount.AmountTemplateId" 
                     @onchange="(e) => UpdateAmountTemplate(int.Parse(e.Value.ToString()))">
                 @foreach (var template in AmountTemplates) { <option value="@template.Id">@template.Name</option> }
             </select>
-            
             <span class="rule-text">assets</span>
+            
+            @if (IsLimitOrder)
+            {
+                <span class="rule-text">at</span>
+                <input type="number" step="0.01" class="field-input" value="@DisplayRule.Price.Value" 
+                       @onchange="(e) => UpdateField(r => r.Price.Value = decimal.Parse(e.Value.ToString()))" />
+                <select class="field-select" value="@DisplayRule.Price.PriceTemplateId" 
+                        @onchange="(e) => UpdatePriceTemplate(int.Parse(e.Value.ToString()))">
+                    @foreach (var template in PriceTemplates) { <option value="@template.Id">@template.Name</option> }
+                </select>
+                <span class="rule-text">from market price.</span>
+            }
+            else
+            {
+                <span class="rule-text">at market price.</span>
+            }
         }
         else { <div class="incomplete-rule">Incomplete rule configuration</div> }
         
@@ -64,11 +75,19 @@
     [Parameter, EditorRequired] public Rule OriginalRule { get; set; }
     [Parameter, EditorRequired] public List<TriggerTemplate> TriggerTemplates { get; set; }
     [Parameter, EditorRequired] public List<ActionTemplate> ActionTemplates { get; set; }
-    [Parameter, EditorRequired] public List<PrecisionTemplate> PrecisionTemplates { get; set; }
+    [Parameter, EditorRequired] public List<PeriodicityTemplate> PeriodicityTemplates { get; set; }
     [Parameter, EditorRequired] public List<AmountTemplate> AmountTemplates { get; set; }
+    [Parameter, EditorRequired] public List<PriceTemplate> PriceTemplates { get; set; }
+    
+    private const int ACTION_LIMIT_SELL_ID = 1;
+    private const int ACTION_LIMIT_BUY_ID = 2;
+    private const int ACTION_MARKET_SELL_ID = 3;
+    private const int ACTION_MARKET_BUY_ID = 4;
+    private const int PRICE_FLAT_ID = 1;
     
     private bool HasPendingChanges => EditorState.HasPendingChanges(OriginalRule.Id);
     private Rule DisplayRule => EditorState.GetPendingRule(OriginalRule.Id) ?? OriginalRule;
+    private bool IsLimitOrder => DisplayRule.Action?.ActionTemplateId is ACTION_LIMIT_SELL_ID or ACTION_LIMIT_BUY_ID;
 
     private void UpdateField(Action<Rule> updateAction)
     {
@@ -92,18 +111,28 @@
     {
         var pendingRule = EditorState.GetPendingRule(OriginalRule.Id) ?? (Rule)OriginalRule.Clone();
         var template = ActionTemplates.First(t => t.Id == templateId);
+        
         pendingRule.Action.ActionTemplateId = templateId;
         pendingRule.Action.ActionTemplate = template;
+        
+        if (templateId == ACTION_MARKET_SELL_ID || templateId == ACTION_MARKET_BUY_ID)
+        {
+            var flatPriceTemplate = PriceTemplates.First(p => p.Id == PRICE_FLAT_ID);
+            pendingRule.Price.PriceTemplateId = PRICE_FLAT_ID;
+            pendingRule.Price.PriceTemplate = flatPriceTemplate;
+            pendingRule.Price.Value = 0;
+        }
+        
         EditorState.TrackChange(OriginalRule.Id, pendingRule);
         CheckIfBackToOriginal();
     }
 
-    private void UpdatePrecisionTemplate(int templateId)
+    private void UpdatePeriodicityTemplate(int templateId)
     {
         var pendingRule = EditorState.GetPendingRule(OriginalRule.Id) ?? (Rule)OriginalRule.Clone();
-        var template = PrecisionTemplates.First(t => t.Id == templateId);
-        pendingRule.Precision.PrecisionTemplateId = templateId;
-        pendingRule.Precision.PrecisionTemplate = template;
+        var template = PeriodicityTemplates.First(t => t.Id == templateId);
+        pendingRule.Periodicity.PeriodicityTemplateId = templateId;
+        pendingRule.Periodicity.PeriodicityTemplate = template;
         EditorState.TrackChange(OriginalRule.Id, pendingRule);
         CheckIfBackToOriginal();
     }
@@ -114,6 +143,16 @@
         var template = AmountTemplates.First(t => t.Id == templateId);
         pendingRule.Amount.AmountTemplateId = templateId;
         pendingRule.Amount.AmountTemplate = template;
+        EditorState.TrackChange(OriginalRule.Id, pendingRule);
+        CheckIfBackToOriginal();
+    }
+
+    private void UpdatePriceTemplate(int templateId)
+    {
+        var pendingRule = EditorState.GetPendingRule(OriginalRule.Id) ?? (Rule)OriginalRule.Clone();
+        var template = PriceTemplates.First(t => t.Id == templateId);
+        pendingRule.Price.PriceTemplateId = templateId;
+        pendingRule.Price.PriceTemplate = template;
         EditorState.TrackChange(OriginalRule.Id, pendingRule);
         CheckIfBackToOriginal();
     }
