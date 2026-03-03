@@ -12,6 +12,7 @@ using RHWebFront.Data;
 using RHWebFront.Data.Migration;
 using RHWebFront.Repositories;
 using RHWebFront.Services;
+using RHWebFront.Services.RuleDisplay;
 
 namespace RHWebFront
 {
@@ -122,6 +123,7 @@ namespace RHWebFront
                 // Background Service
                 svc.AddHostedService<BidAskPollingService>();
                 svc.AddScoped<RuleEditorStateService>();
+                svc.AddScoped<RuleDisplayCompositor>();
 
                 return builder;
             }

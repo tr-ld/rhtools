@@ -1,5 +1,6 @@
 @using rhdata.Rules
 @using RHWebFront.Services
+@using RHWebFront.Services.RuleDisplay
 @inject RuleEditorStateService EditorState
 
 <article class="rule-card-horizontal @(HasPendingChanges ? "has-pending-changes" : "")">
@@ -12,53 +13,57 @@
             </label>
         </div>
         
-        @if (DisplayRule.Trigger?.TriggerTemplate is not null && DisplayRule.Action?.ActionTemplate is not null)
+        @if (DisplayRule.Trigger?.TriggerTemplate is not null && DisplayRule.Action?.ActionTemplate is not null && _composition is not null)
         {
-            <span class="rule-text">Triggers when market price is</span>
+            //trigger prompt
+            @if (!string.IsNullOrEmpty(_composition.TriggerPrompt.StaticText)) { <span class="rule-text">@_composition.TriggerPrompt.StaticText</span> }
             <select class="field-select" value="@DisplayRule.Trigger.TriggerTemplateId" 
                     @onchange="(e) => UpdateTriggerTemplate(int.Parse(e.Value.ToString()))">
                 @foreach (var template in TriggerTemplates) { <option value="@template.Id">@template.Name</option> }
             </select>
-            <input type="number" step="0.01" class="field-input" value="@DisplayRule.Trigger.Value" 
-                   @onchange="(e) => UpdateField(r => r.Trigger.Value = decimal.Parse(e.Value.ToString()))" />
+            <input type="text" class="field-input" value="@Compositor.FormatValue(DisplayRule.Trigger.Value, _composition.TriggerPrompt.ConfigFormatType)" 
+                   @onchange="(e) => UpdateTriggerValue(e.Value.ToString())" />
             
-            <span class="rule-text">. It is checked every</span>
+            //action periodicity prompt
+            @if (!string.IsNullOrEmpty(_composition.PeriodicityPrompt.StaticText)) { <span class="rule-text">@_composition.PeriodicityPrompt.StaticText</span> }
             <input type="number" class="field-input" value="@DisplayRule.Periodicity.Value" 
                    @onchange="(e) => UpdateField(r => r.Periodicity.Value = int.Parse(e.Value.ToString()))" />
             <select class="field-select" value="@DisplayRule.Periodicity.PeriodicityTemplateId" 
                     @onchange="(e) => UpdatePeriodicityTemplate(int.Parse(e.Value.ToString()))">
                 @foreach (var template in PeriodicityTemplates) { <option value="@template.Id">@template.Name</option> }
             </select>
-            <span class="rule-text">. When triggered, execute a</span>
             
+            //action prompt
+            @if (!string.IsNullOrEmpty(_composition.ActionPrompt.StaticText)) { <span class="rule-text">@_composition.ActionPrompt.StaticText</span> }
             <select class="field-select" value="@DisplayRule.Action.ActionTemplateId" 
                     @onchange="(e) => UpdateActionTemplate(int.Parse(e.Value.ToString()))">
                 @foreach (var template in ActionTemplates) { <option value="@template.Id">@template.Name</option> }
             </select>
-            <span class="rule-text">at</span>
-            <input type="number" step="0.01" class="field-input" value="@DisplayRule.Amount.Value" 
-                   @onchange="(e) => UpdateField(r => r.Amount.Value = decimal.Parse(e.Value.ToString()))" />
+            @if (!string.IsNullOrEmpty(_composition.ActionPrompt.TrailingText)) { <span class="rule-text">@_composition.ActionPrompt.TrailingText</span> }
+            
+            //amount prompt
+            <input type="text" class="field-input" value="@Compositor.FormatValue(DisplayRule.Amount.Value, _composition.AmountPrompt.ConfigFormatType)" 
+                   @onchange="(e) => UpdateAmountValue(e.Value.ToString())" />
             <select class="field-select" value="@DisplayRule.Amount.AmountTemplateId" 
                     @onchange="(e) => UpdateAmountTemplate(int.Parse(e.Value.ToString()))">
                 @foreach (var template in AmountTemplates) { <option value="@template.Id">@template.Name</option> }
             </select>
-            <span class="rule-text">assets</span>
             
-            @if (IsLimitOrder)
+            //price prompt
+            @if (!string.IsNullOrEmpty(_composition.PricePrompt.StaticText)) { <span class="rule-text">@_composition.PricePrompt.StaticText</span> }
+            @if (_composition.PricePrompt.ShowDropdown)
             {
-                <span class="rule-text">at</span>
-                <input type="number" step="0.01" class="field-input" value="@DisplayRule.Price.Value" 
-                       @onchange="(e) => UpdateField(r => r.Price.Value = decimal.Parse(e.Value.ToString()))" />
                 <select class="field-select" value="@DisplayRule.Price.PriceTemplateId" 
                         @onchange="(e) => UpdatePriceTemplate(int.Parse(e.Value.ToString()))">
                     @foreach (var template in PriceTemplates) { <option value="@template.Id">@template.Name</option> }
                 </select>
-                <span class="rule-text">from market price.</span>
             }
-            else
+            @if (_composition.PricePrompt.ShowConfig)
             {
-                <span class="rule-text">at market price.</span>
+                <input type="text" class="field-input" value="@Compositor.FormatValue(DisplayRule.Price.Value, _composition.PricePrompt.ConfigFormatType)" 
+                       @onchange="(e) => UpdatePriceValue(e.Value.ToString())" />
             }
+            @if (!string.IsNullOrEmpty(_composition.PricePrompt.TrailingText)) { <span class="rule-text">@_composition.PricePrompt.TrailingText</span> }
         }
         else { <div class="incomplete-rule">Incomplete rule configuration</div> }
         
@@ -73,21 +78,20 @@
 
 @code {
     [Parameter, EditorRequired] public Rule OriginalRule { get; set; }
+    [Parameter, EditorRequired] public RuleDisplayCompositor Compositor { get; set; }
     [Parameter, EditorRequired] public List<TriggerTemplate> TriggerTemplates { get; set; }
     [Parameter, EditorRequired] public List<ActionTemplate> ActionTemplates { get; set; }
     [Parameter, EditorRequired] public List<PeriodicityTemplate> PeriodicityTemplates { get; set; }
     [Parameter, EditorRequired] public List<AmountTemplate> AmountTemplates { get; set; }
     [Parameter, EditorRequired] public List<PriceTemplate> PriceTemplates { get; set; }
     
-    private const int ACTION_LIMIT_SELL_ID = 1;
-    private const int ACTION_LIMIT_BUY_ID = 2;
-    private const int ACTION_MARKET_SELL_ID = 3;
-    private const int ACTION_MARKET_BUY_ID = 4;
-    private const int PRICE_FLAT_ID = 1;
-    
+    private RuleComposition _composition;
     private bool HasPendingChanges => EditorState.HasPendingChanges(OriginalRule.Id);
     private Rule DisplayRule => EditorState.GetPendingRule(OriginalRule.Id) ?? OriginalRule;
-    private bool IsLimitOrder => DisplayRule.Action?.ActionTemplateId is ACTION_LIMIT_SELL_ID or ACTION_LIMIT_BUY_ID;
+
+    protected override void OnParametersSet() { RecomposeUI(); }
+
+    private void RecomposeUI() { _composition = Compositor.ComposeRule(DisplayRule); }
 
     private void UpdateField(Action<Rule> updateAction)
     {
@@ -105,6 +109,12 @@
         pendingRule.Trigger.TriggerTemplate = template;
         EditorState.TrackChange(OriginalRule.Id, pendingRule);
         CheckIfBackToOriginal();
+        RecomposeUI();
+    }
+
+    private void UpdateTriggerValue(string input)
+    {
+        if (Compositor.ValidateValue(input, _composition.TriggerPrompt.ConfigFormatType, out var value)) UpdateField(r => r.Trigger.Value = value);
     }
 
     private void UpdateActionTemplate(int templateId)
@@ -115,16 +125,17 @@
         pendingRule.Action.ActionTemplateId = templateId;
         pendingRule.Action.ActionTemplate = template;
         
-        if (templateId == ACTION_MARKET_SELL_ID || templateId == ACTION_MARKET_BUY_ID)
+        if (templateId is RuleTemplateConstants.ACTION_MARKET_SELL_ID or RuleTemplateConstants.ACTION_MARKET_BUY_ID)
         {
-            var flatPriceTemplate = PriceTemplates.First(p => p.Id == PRICE_FLAT_ID);
-            pendingRule.Price.PriceTemplateId = PRICE_FLAT_ID;
+            var flatPriceTemplate = PriceTemplates.First(p => p.Id == RuleTemplateConstants.PRICE_FLAT_ID);
+            pendingRule.Price.PriceTemplateId = RuleTemplateConstants.PRICE_FLAT_ID;
             pendingRule.Price.PriceTemplate = flatPriceTemplate;
             pendingRule.Price.Value = 0;
         }
         
         EditorState.TrackChange(OriginalRule.Id, pendingRule);
         CheckIfBackToOriginal();
+        RecomposeUI();
     }
 
     private void UpdatePeriodicityTemplate(int templateId)
@@ -135,6 +146,7 @@
         pendingRule.Periodicity.PeriodicityTemplate = template;
         EditorState.TrackChange(OriginalRule.Id, pendingRule);
         CheckIfBackToOriginal();
+        RecomposeUI();
     }
 
     private void UpdateAmountTemplate(int templateId)
@@ -145,6 +157,12 @@
         pendingRule.Amount.AmountTemplate = template;
         EditorState.TrackChange(OriginalRule.Id, pendingRule);
         CheckIfBackToOriginal();
+        RecomposeUI();
+    }
+
+    private void UpdateAmountValue(string input)
+    {
+        if (Compositor.ValidateValue(input, _composition.AmountPrompt.ConfigFormatType, out var value)) UpdateField(r => r.Amount.Value = value);
     }
 
     private void UpdatePriceTemplate(int templateId)
@@ -155,18 +173,24 @@
         pendingRule.Price.PriceTemplate = template;
         EditorState.TrackChange(OriginalRule.Id, pendingRule);
         CheckIfBackToOriginal();
+        RecomposeUI();
+    }
+
+    private void UpdatePriceValue(string input)
+    {
+        if (Compositor.ValidateValue(input, _composition.PricePrompt.ConfigFormatType, out var value)) UpdateField(r => r.Price.Value = value);
     }
 
     private void CheckIfBackToOriginal()
     {
         if (OriginalRule.Id < 0) return;
         
-        if (EditorState.GetPendingRule(OriginalRule.Id) is { } pendingRule && OriginalRule.Equals(pendingRule))
-        { EditorState.UndoChanges(OriginalRule.Id); }
+        if (EditorState.GetPendingRule(OriginalRule.Id) is { } pendingRule && OriginalRule.Equals(pendingRule)) EditorState.UndoChanges(OriginalRule.Id);
     }
 
     public void Undo()
     {
         EditorState.UndoChanges(OriginalRule.Id);
+        RecomposeUI();
     }
 }

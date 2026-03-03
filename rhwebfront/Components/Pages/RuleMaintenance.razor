@@ -8,12 +8,14 @@
 @using rhdata.Rules
 @using RHWebFront.Components.ItemTemplates
 @using RHWebFront.Services
+@using RHWebFront.Services.RuleDisplay
 @inject IRhAssetManager AssetManager
 @inject IRuleManager RuleManager
 @inject NavigationManager Navigation
 @inject IOptionsSnapshot<AppConfig> AppConfig
 @inject ISelectedSymbolManager SymbolManager
 @inject RuleEditorStateService EditorState
+@inject RuleDisplayCompositor Compositor
 
 <div class="page-header">
     <h3>@(!string.IsNullOrEmpty(SymbolManager.SelectedSymbol) ? $"{SymbolManager.SelectedSymbol} Rules" : "Symbol Rules")</h3>
@@ -46,8 +48,13 @@
                     <div class="rule-list-horizontal">
                         @foreach (var rule in GetOrderedRules())
                         {
-                            <RuleRow OriginalRule="@rule" TriggerTemplates="@_triggerTemplates" ActionTemplates="@_actionTemplates" 
-                                     PeriodicityTemplates="@_periodicityTemplates" AmountTemplates="@_amountTemplates" PriceTemplates="@_priceTemplates" />
+                            <RuleRow OriginalRule="@rule" 
+                                     Compositor="@Compositor"
+                                     TriggerTemplates="@_triggerTemplates" 
+                                     ActionTemplates="@_actionTemplates" 
+                                     PeriodicityTemplates="@_periodicityTemplates" 
+                                     AmountTemplates="@_amountTemplates" 
+                                     PriceTemplates="@_priceTemplates" />
                         }
                     </div>
                 }
@@ -212,6 +219,7 @@ else
     private void UndoAllChanges()
     {
         EditorState.UndoAllChanges();
+        //todo all this should probably be moved into the editor state
         var newRules = EditorState.GetNewRuleIds().ToList();
         foreach (var ruleId in newRules)
         {

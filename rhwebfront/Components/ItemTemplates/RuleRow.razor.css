@@ -114,7 +114,8 @@
 }
 
 .field-input {
-    width: 80px;
+    min-width: 80px;
+    max-width: 160px;
     font-family: 'Consolas', 'Monaco', monospace;
 }
 
