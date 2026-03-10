@@ -1,4 +1,6 @@
 <Solution>
+  <Project Path="abstractions/abstractions.csproj" Id="11856d99-fd03-45c0-8abc-e710c9e7e789" />
+  <Project Path="emulation/emulation.csproj" Id="c3910756-e8a3-4ce0-985f-d42c8a7367e2" />
   <Project Path="rhapi/rhapi.csproj" />
   <Project Path="rhdata/rhdata.csproj" Id="ba79640c-d2fe-4c9c-a763-1dbc48a66503" />
   <Project Path="rhwebfront/RHWebFront.csproj" />

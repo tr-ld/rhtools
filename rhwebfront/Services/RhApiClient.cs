@@ -4,6 +4,7 @@ using rhdata;
 using System.Text;
 using rhapi.Endpoints;
 using System.Net;
+using abstractions.Services;
 
 namespace RHWebFront.Services
 {
@@ -85,12 +86,9 @@ namespace RHWebFront.Services
 
         #region Market - Trading Pairs
         private const string GET_TRADING_PAIRS_PATH = $"{RhMarketEndpoints.MARKET_GROUP}{RhMarketEndpoints.GET_TRADING_PAIRS}";
-        public async Task<RHTradingPair[]> GetTradingPairs(string[] symbols)
+        public async Task<RHTradingPair[]> GetTradingPairs()
         {
-            var query = BuildQueryString(new Dictionary<string, string[]> { ["symbols"] = symbols });
-            var path = $"{GET_TRADING_PAIRS_PATH}{query}";
-
-            var resultToken = await MakeApiRequest<JToken>(HttpMethods.Get, path);
+            var resultToken = await MakeApiRequest<JToken>(HttpMethods.Get, GET_TRADING_PAIRS_PATH);
 
             if (resultToken.IsNullOrEmpty()) return [];
             if (resultToken.Type == JTokenType.Array) return resultToken.ToObject<RHTradingPair[]>() ?? [];

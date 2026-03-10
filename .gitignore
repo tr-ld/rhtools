@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/rhwebfront/rhtools.db-wal
+/rhwebfront/rhtools.db-shm
+/rhwebfront/rhtools.db
+/rhwebfront/RHWebFront.csproj

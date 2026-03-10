@@ -1,6 +1,6 @@
 ﻿@page "/holdings"
-@using RHWebFront.Services
-@using RHWebFront.Models
+@using abstractions.Services
+@using rhdata.Models
 @inject IRhAssetManager manager
 
 @if (AssetSnapshots is null) { <p>Loading...</p> }
@@ -16,7 +16,8 @@ else
 }
 
 @code {
-    private IReadOnlyList<RHAssetSnapshot> AssetSnapshots { get; set; }
+    [PersistentState]
+    public IReadOnlyList<RHAssetSnapshot> AssetSnapshots { get; set; }
 
     protected override async Task OnInitializedAsync()
     {

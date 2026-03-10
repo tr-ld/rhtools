@@ -1,0 +1,321 @@
+.symbol-selector-section {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.symbol-selector-section label {
+    font-weight: 600;
+}
+
+.symbol-selector-section select {
+    padding: 0.5rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color, #ccc);
+}
+
+.symbol-selector-container {
+    margin-bottom: 2rem;
+}
+
+.search-section {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.symbol-search {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    font-size: 1rem;
+    border: 2px solid var(--border-medium);
+    border-radius: 8px;
+    transition: border-color var(--theme-transition-duration) var(--theme-transition-easing);
+    background: white;
+    color: var(--surface-foreground);
+}
+
+.symbol-search:focus {
+    outline: none;
+    border-color: var(--blush-contrast);
+    box-shadow: var(--blush-focus-ring);
+}
+
+.clear-search {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+}
+
+.clear-search:hover {
+    color: var(--blush-contrast);
+}
+
+.loading-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--muted);
+}
+
+.symbols-with-rules-row {
+    width: fit-content;
+    background-color: var(--surface);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border: 2px solid var(--border-medium);
+}
+
+.symbols-with-rules-row .symbol-grid {
+    margin-bottom: 0;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(80px, auto);
+    grid-template-columns: unset;
+    width: auto;
+}
+
+.symbols-with-rules-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-medium);
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--blush-foreground);
+    margin: 0 0 1rem 0;
+}
+
+.symbol-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.symbol-card {
+    background: var(--blush);
+    border: 2px solid var(--border-medium);
+    border-radius: 8px;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all var(--theme-transition-duration) var(--theme-transition-easing);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    min-height: 40px;
+}
+
+.symbol-card:hover {
+    border-color: var(--blush-contrast);
+    background: var(--blush-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.symbol-card.selected {
+    border-color: var(--blush-contrast);
+    background: var(--surface);
+    box-shadow: 0 0 0 1px var(--blush-contrast);
+}
+
+.asset-code {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--blush-foreground);
+}
+
+.selected-indicator {
+    color: var(--blush-contrast);
+    font-size: 0.875rem;
+    font-weight: bold;
+}
+
+.show-all-card {
+    /* Inherits all styles from .symbol-card */
+}
+
+.no-results {
+    text-align: center;
+    padding: 3rem;
+    color: var(--muted);
+}
+
+.validation-error {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    background-color: var(--order-sell-bg);
+    color: var(--order-sell-fg);
+    border-radius: 8px;
+    border-left: 4px solid var(--order-sell-fg);
+}
+
+.rules-section {
+    padding: 1.5rem;
+    border: 2px solid var(--border-medium);
+    border-radius: 12px;
+    background-color: var(--surface);
+}
+
+.rules-section.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.rules-section h4 {
+    margin-top: 0;
+    color: var(--blush-foreground);
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.page-header h3 {
+    margin: 0;
+    color: var(--blush-foreground);
+}
+
+.crypto-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    display: block;
+}
+
+.change-symbol-btn {
+    background: var(--blush);
+    border: 2px solid var(--border-medium);
+    border-radius: 8px;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all var(--theme-transition-duration) var(--theme-transition-easing);
+    color: var(--blush-foreground);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.change-symbol-btn:hover {
+    background: var(--blush-hover);
+    border-color: var(--blush-contrast);
+    transform: scale(1.05);
+}
+
+.change-symbol-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.change-symbol-btn:disabled:hover {
+    background: var(--blush);
+    border-color: var(--border-medium);
+    transform: none;
+}
+
+.rules-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.rule-list-horizontal {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.no-rules {
+    text-align: center;
+    padding: 2rem;
+    color: var(--muted);
+}
+
+.rule-actions-bar {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 2px solid var(--border-medium);
+}
+
+.create-rule-btn {
+    padding: 0.75rem 1.5rem;
+    background: var(--blush);
+    border: 2px solid var(--border-medium);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all var(--theme-transition-duration) var(--theme-transition-easing);
+    color: var(--blush-foreground);
+    font-weight: 600;
+}
+
+.create-rule-btn:hover {
+    background: var(--blush-hover);
+    border-color: var(--blush-contrast);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.save-btn {
+    padding: 0.75rem 1.5rem;
+    background: var(--blush-contrast);
+    color: white;
+    border: 2px solid var(--blush-contrast);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all var(--theme-transition-duration) var(--theme-transition-easing);
+}
+
+.save-btn:hover {
+    background: var(--blush);
+    color: var(--blush-foreground);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.undo-all-btn {
+    padding: 0.75rem 1.5rem;
+    background: var(--surface);
+    color: var(--surface-foreground);
+    border: 2px solid var(--border-medium);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all var(--theme-transition-duration) var(--theme-transition-easing);
+}
+
+.undo-all-btn:hover {
+    background: var(--order-sell-bg);
+    color: var(--order-sell-fg);
+    border-color: var(--order-sell-fg);
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .rule-actions-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .create-rule-btn,
+    .save-btn,
+    .undo-all-btn {
+        width: 100%;
+    }
+}

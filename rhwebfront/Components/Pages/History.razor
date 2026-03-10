@@ -1,8 +1,40 @@
 ﻿@page "/history"
 @rendermode InteractiveServer
+@using abstractions.Services
+@using RHWebFront.Components.ItemTemplates
+@inject IRhAssetManager manager
 
-<h3>History</h3>
+@if (Orders is null) { <p>Loading...</p> }
+else if (Orders.Length == 0) { <p>No order history</p> }
+else
+{
+    <table class="history-orders-table">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Side</th>
+                <th>Type</th>
+                <th>State</th>
+                <th class="numeric-header">Filled Qty</th>
+                <th class="numeric-header">Avg Price</th>
+                <th>Created</th>
+                <th>Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in Orders)
+            {
+                <OrderRow @key="order.Id" Order="@order" />
+            }
+        </tbody>
+    </table>
+}
 
 @code {
+    private rhdata.RHOrder[] Orders { get; set; }
 
+    protected override async Task OnInitializedAsync()
+    {
+        Orders = await manager.GetClosedOrders();
+    }
 }

@@ -1,10 +1,249 @@
 ﻿@page "/rules"
 @rendermode InteractiveServer
+@using abstractions.Services
+@using RHWebFront.Config
+@using RHWebFront.Extensions
+@using Microsoft.Extensions.Options
+@using rhdata
+@using rhdata.Rules
+@using RHWebFront.Components.ItemTemplates
+@using RHWebFront.Services
+@using RHWebFront.Services.RuleDisplay
+@inject IRhAssetManager AssetManager
+@inject IRuleManager RuleManager
+@inject NavigationManager Navigation
+@inject IOptionsSnapshot<AppConfig> AppConfig
+@inject ISelectedSymbolManager SymbolManager
+@inject RuleEditorStateService EditorState
+@inject RuleDisplayCompositor Compositor
 
-<h3>Rules Maintenance</h3>
+<div class="page-header">
+    <h3>@(!string.IsNullOrEmpty(SymbolManager.SelectedSymbol) ? $"{SymbolManager.SelectedSymbol} Rules" : "Symbol Rules")</h3>
+    <button class="change-symbol-btn" @onclick="ShowSymbolSelector" title="Change symbol" disabled="@(string.IsNullOrEmpty(SymbolManager.SelectedSymbol))">
+        <img src="/icons/crypto-symbol.svg" alt="Change symbol" class="crypto-icon" />
+    </button>
+</div>
 
-<div style="background-color: fuchsia">thing</div>
+@if (SymbolManager.ShowSymbolSelector)
+{
+    <SymbolSelector TradingPairs="_tradingPairs" RuleSets="_ruleSets" OnSymbolSelected="HandleSymbolSelected" />
+}
+
+@if (!string.IsNullOrEmpty(_validationError)) { <div class="validation-error">@_validationError</div> }
+
+@if (!string.IsNullOrEmpty(SymbolManager.SelectedSymbol))
+{
+    <div class="rules-section">
+        @if (RuleManager.ActiveRuleSet is null)
+        {
+            <div class="loading-state">
+                <p>Loading rules...</p>
+            </div>
+        }
+        else
+        {
+            <div class="rules-container">
+                @if (RuleManager.ActiveRuleSet.Rules.Any())
+                {
+                    <div class="rule-list-horizontal">
+                        @foreach (var rule in GetOrderedRules())
+                        {
+                            <RuleRow OriginalRule="@rule" 
+                                     Compositor="@Compositor"
+                                     TriggerTemplates="@_triggerTemplates" 
+                                     ActionTemplates="@_actionTemplates" 
+                                     PeriodicityTemplates="@_periodicityTemplates" 
+                                     AmountTemplates="@_amountTemplates" 
+                                     PriceTemplates="@_priceTemplates" />
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="no-rules">
+                        <p>No rules defined.</p>
+                    </div>
+                }
+                
+                <div class="rule-actions-bar">
+                    <button class="create-rule-btn" @onclick="CreateNewRule">+ Create New Rule</button>
+                    @if (EditorState.HasAnyPendingChanges())
+                    {
+                        <button class="save-btn" @onclick="SaveAllChanges">Save All Changes</button>
+                        <button class="undo-all-btn" @onclick="UndoAllChanges">Undo All</button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="rules-section disabled">
+        <p>Select a symbol above to manage rules</p>
+    </div>
+}
 
 @code {
+    [SupplyParameterFromQuery(Name = "symbol")]
+    private string QuerySymbol { get; set; }
+    
+    [SupplyParameterFromQuery(Name = "assetCode")]
+    private string QueryAssetCode { get; set; }
 
+    private List<RHTradingPair> _tradingPairs;
+    private List<RuleSet> _ruleSets;
+    private string _validationError = null;
+
+    private List<TriggerTemplate> _triggerTemplates = [];
+    private List<ActionTemplate> _actionTemplates = [];
+    private List<PeriodicityTemplate> _periodicityTemplates = [];
+    private List<AmountTemplate> _amountTemplates = [];
+    private List<PriceTemplate> _priceTemplates = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _tradingPairs = (await AssetManager.GetTradingPairs()).ForTradeCurrency(AppConfig.Value.TradeCurrency).ToList();
+        _ruleSets = await RuleManager.GetRuleSetsForTradeCurrencyAsync();
+        
+        _triggerTemplates = await RuleManager.GetTriggerTemplatesAsync();
+        _actionTemplates = await RuleManager.GetActionTemplatesAsync();
+        _periodicityTemplates = await RuleManager.GetPeriodicityTemplatesAsync();
+        _amountTemplates = await RuleManager.GetAmountTemplatesAsync();
+        _priceTemplates = await RuleManager.GetPriceTemplatesAsync();
+        
+        ValidateResolvedSymbol();
+    }
+
+    private string _resolvedSymbol = null;
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrEmpty(QuerySymbol)) _resolvedSymbol = QuerySymbol;
+        else if (!string.IsNullOrEmpty(QueryAssetCode))
+        {
+            _resolvedSymbol = $"{QueryAssetCode}-{AppConfig.Value.TradeCurrency}";
+            Navigation.NavigateTo($"/rules?symbol={_resolvedSymbol}", replace: true);
+        }
+        else _resolvedSymbol = null;
+
+        if (_tradingPairs is not null) ValidateResolvedSymbol();
+    }
+
+    private async void ValidateResolvedSymbol()
+    {
+        if (string.IsNullOrEmpty(_resolvedSymbol))
+        {
+            if (string.IsNullOrEmpty(SymbolManager.SelectedSymbol)) { _validationError = null; return; }
+            await LoadRuleSetForSymbol(SymbolManager.SelectedSymbol);
+            return;
+        }
+
+        if (SymbolExists(_resolvedSymbol))
+        {
+            SymbolManager.SelectedSymbol = _resolvedSymbol;
+            SymbolManager.ShowSymbolSelector = false;
+            _validationError = null;
+            await LoadRuleSetForSymbol(_resolvedSymbol);
+        }
+        else
+        {
+            SymbolManager.ClearSelection();
+            _validationError = $"The symbol '{_resolvedSymbol}' was not found. Please select from the list.";
+        }
+    }
+
+    private bool SymbolExists(string symbol) => _tradingPairs?.Any(p => p.Symbol == symbol) ?? false;
+
+    private async Task HandleSymbolSelected(RHTradingPair pair)
+    {
+        _validationError = null;
+
+        if (SymbolManager.SelectedSymbol == pair.Symbol) { SymbolManager.ShowSymbolSelector = false; return; }
+
+        SymbolManager.SelectedSymbol = pair.Symbol;
+        SymbolManager.ShowSymbolSelector = false;
+        Navigation.NavigateTo($"/rules?symbol={pair.Symbol}", replace: true);
+        
+        await LoadRuleSetForSymbol(pair.Symbol);
+    }
+
+    private async Task LoadRuleSetForSymbol(string symbol)
+    {
+        RuleManager.ActiveRuleSet = await RuleManager.GetRuleSetBySymbolAsync(symbol) ?? new RuleSet { Symbol = symbol };
+        EditorState.Clear();
+        StateHasChanged();
+    }
+
+    private IEnumerable<Rule> GetOrderedRules() => RuleManager.ActiveRuleSet.Rules.OrderBy(r => r.Position);
+
+    protected override void OnInitialized() { EditorState.StateChanged += StateHasChanged; }
+
+    private void CreateNewRule()
+    {
+        if (!_triggerTemplates.Any() || !_actionTemplates.Any() || !_periodicityTemplates.Any() || !_amountTemplates.Any() || !_priceTemplates.Any())
+        {
+            _validationError = "Templates not loaded. Please refresh the page.";
+            return;
+        }
+
+        var nextPosition = RuleManager.ActiveRuleSet.Rules.Any() ? RuleManager.ActiveRuleSet.Rules.Max(r => r.Position) + 1 : 1;
+        var triggerTemplate = _triggerTemplates.First();
+        var actionTemplate = _actionTemplates.First();
+        var periodicityTemplate = _periodicityTemplates.First();
+        var amountTemplate = _amountTemplates.First();
+        var priceTemplate = _priceTemplates.First();
+        
+        var newRule = new Rule
+        {
+            Id = -(RuleManager.ActiveRuleSet.Rules.Count + 1),
+            RuleSetId = RuleManager.ActiveRuleSet.Id,
+            IsActive = true,
+            Position = nextPosition,
+            TriggerId = 0,
+            ActionId = 0,
+            PeriodicityId = 0,
+            AmountId = 0,
+            PriceId = 0,
+            Trigger = new RuleTrigger { TriggerTemplateId = triggerTemplate.Id, TriggerTemplate = triggerTemplate, Value = 0 },
+            Action = new RuleAction { ActionTemplateId = actionTemplate.Id, ActionTemplate = actionTemplate, Value = 0 },
+            Periodicity = new RulePeriodicity { PeriodicityTemplateId = periodicityTemplate.Id, PeriodicityTemplate = periodicityTemplate, Value = 1 },
+            Amount = new RuleAmount { AmountTemplateId = amountTemplate.Id, AmountTemplate = amountTemplate, Value = 0 },
+            Price = new RulePrice { PriceTemplateId = priceTemplate.Id, PriceTemplate = priceTemplate, Value = 0 }
+        };
+        
+        RuleManager.ActiveRuleSet.Rules.Add(newRule);
+        EditorState.MarkAsNew(newRule.Id);
+        StateHasChanged();
+    }
+
+    private void UndoAllChanges()
+    {
+        EditorState.UndoAllChanges();
+        //todo all this should probably be moved into the editor state
+        var newRules = EditorState.GetNewRuleIds().ToList();
+        foreach (var ruleId in newRules)
+        {
+            var rule = RuleManager.ActiveRuleSet.Rules.FirstOrDefault(r => r.Id == ruleId);
+            if (rule is null) continue;
+
+            RuleManager.ActiveRuleSet.Rules.Remove(rule);
+            EditorState.RemoveRule(ruleId);
+        }
+    }
+
+    private async Task SaveAllChanges()
+    {
+        foreach (var ruleId in EditorState.GetChangedRuleIds())
+        {
+            var pendingRule = EditorState.GetPendingRule(ruleId);
+            await RuleManager.SaveActiveRuleAsync(ruleId, pendingRule);
+        }
+        
+        await LoadRuleSetForSymbol(RuleManager.ActiveRuleSet.Symbol);
+        EditorState.Clear();
+    }
+    
+    public void Dispose() { EditorState.StateChanged -= StateHasChanged; }
+
+    private void ShowSymbolSelector() { SymbolManager.ShowSymbolSelector = !SymbolManager.ShowSymbolSelector; }
 }

@@ -1,6 +1,7 @@
 ﻿@page "/pending"
 @rendermode InteractiveServer
-@using RHWebFront.Services
+@using abstractions.Services
+@using RHWebFront.Components.ItemTemplates
 @inject IRhAssetManager manager
 
 @if (Orders is null) { <p>Loading...</p> }
@@ -34,7 +35,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        // Orders = await manager.GetOpenOrders();
-        Orders = await manager.GetOrders();
+        Orders = await manager.GetOpenOrders();
+        // Orders = await manager.GetAllOrders();
     }
 }

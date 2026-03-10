@@ -1,5 +1,3 @@
-/* Uses global theme tokens from wwwroot/theme.css */
-
 /* Card */
 .holding-card {
     background-color: var(--surface);
@@ -149,4 +147,31 @@
 
 .holding-card:focus {
     box-shadow: var(--blush-focus-ring);
+}
+
+/* Footer */
+.holding-card-footer {
+    border-top: 1px solid var(--border-subtle, #eee);
+    display: flex;
+    margin: 0.5rem -0.75rem -0.75rem -0.75rem;
+}
+
+.holding-card-footer button {
+    flex: 1;
+    border-radius: 0;
+}
+
+.holding-card-footer button:first-child {
+    border-bottom-left-radius: 0.6rem;
+}
+
+.holding-card-footer button:last-child {
+    border-bottom-right-radius: 0.6rem;
+}
+
+.holding-card-footer button:hover {
+    transform: none !important;
+    box-shadow: none !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    background-color: var(--blush-hover) !important;
 }

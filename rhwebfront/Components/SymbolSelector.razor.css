@@ -1,0 +1,118 @@
+.symbol-selector-container {
+    margin-bottom: 2rem;
+}
+
+.search-section {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.symbol-search {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    font-size: 1rem;
+    border: 2px solid var(--border-medium);
+    border-radius: 8px;
+    transition: border-color var(--theme-transition-duration) var(--theme-transition-easing);
+    background: white;
+    color: var(--surface-foreground);
+}
+
+.symbol-search:focus {
+    outline: none;
+    border-color: var(--blush-contrast);
+    box-shadow: var(--blush-focus-ring);
+}
+
+.clear-search {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+}
+
+.clear-search:hover {
+    color: var(--blush-contrast);
+}
+
+.loading-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--muted);
+}
+
+.symbols-with-rules-row {
+    width: fit-content;
+    background-color: var(--surface);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border: 2px solid var(--border-medium);
+}
+
+.symbols-with-rules-row .symbol-grid {
+    margin-bottom: 0;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(80px, auto);
+    grid-template-columns: unset;
+    width: auto;
+}
+
+.symbol-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.symbol-card {
+    background: var(--blush);
+    border: 2px solid var(--border-medium);
+    border-radius: 8px;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all var(--theme-transition-duration) var(--theme-transition-easing);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    min-height: 40px;
+}
+
+.symbol-card:hover {
+    border-color: var(--blush-contrast);
+    background: var(--blush-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.symbol-card.selected {
+    border-color: var(--blush-contrast);
+    background: var(--surface);
+    box-shadow: 0 0 0 1px var(--blush-contrast);
+}
+
+.asset-code {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--blush-foreground);
+}
+
+.selected-indicator {
+    color: var(--blush-contrast);
+    font-size: 0.875rem;
+    font-weight: bold;
+}
+
+.no-results {
+    text-align: center;
+    padding: 3rem;
+    color: var(--muted);
+}

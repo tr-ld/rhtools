@@ -1,4 +1,6 @@
-@using RHWebFront.Models
+@using rhdata.Models
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
 
 <article class="holding-card" tabindex="0" role="group" aria-label="@($"Holding {Asset.Symbol}")">
     <header class="holding-card-header">
@@ -36,9 +38,19 @@
             <span class="value">@Asset.Holding?.QuantityAvailableForTrading</span>
         </div>
     </div>
+
+    <footer class="holding-card-footer">
+        <button class="btn btn-primary">TBD</button>
+        <button class="btn btn-primary" @onclick="NavigateToRules">Manage Rules</button>
+    </footer>
 </article>
 
 @code {
     [Parameter, EditorRequired]
     public required RHAssetSnapshot Asset { get; set; }
+
+    private void NavigateToRules()
+    {
+        Navigation.NavigateTo($"/rules?assetCode={Asset.Symbol}");
+    }
 }

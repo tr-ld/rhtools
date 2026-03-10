@@ -1,0 +1,127 @@
+﻿@using abstractions.Services
+@using rhdata
+@using rhdata.Rules
+@inject ISelectedSymbolManager SymbolManager
+
+<div class="symbol-selector-container">
+    <div class="search-section">
+        <input type="text" class="symbol-search" placeholder="Search symbols..." @bind="_searchTerm" @bind:event="oninput" />
+        @if (!string.IsNullOrEmpty(_searchTerm))
+        {
+            <button class="clear-search" @onclick="ClearSearch">&times;</button>
+        }
+    </div>
+
+    @if (TradingPairs is null)
+    {
+        <div class="loading-state">
+            <p>Loading trading pairs...</p>
+        </div>
+    }
+    else
+    {
+        @if (RuleSets is not null && RuleSets.Count > 0 && string.IsNullOrWhiteSpace(_searchTerm))
+        {
+            <div class="symbols-with-rules-row">
+                <div class="symbol-grid">
+                    @foreach (var pair in TradingPairsWithRules)
+                    {
+                        var isSelected = SymbolManager.SelectedSymbol == pair.Symbol;
+                        
+                        <div class="symbol-card @(isSelected ? "selected" : "")" @onclick="() => OnSymbolSelected.InvokeAsync(pair)">
+                            <span class="asset-code">@pair.AssetCode</span>
+                            @if (isSelected) { <span class="selected-indicator">&#10003;</span> }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="symbol-grid">
+            @foreach (var pair in DisplayedPairs)
+            {
+                var isSelected = SymbolManager.SelectedSymbol == pair.Symbol;
+                
+                <div class="symbol-card @(isSelected ? "selected" : "")" @onclick="() => OnSymbolSelected.InvokeAsync(pair)">
+                    <span class="asset-code">@pair.AssetCode</span>
+                    @if (isSelected) { <span class="selected-indicator">&#10003;</span> }
+                </div>
+            }
+            
+            @if (!_showAll && string.IsNullOrWhiteSpace(_searchTerm) && FilteredPairs.Count() > DisplayedPairs.Count)
+            {
+                <div class="symbol-card show-all-card" @onclick="ShowAllSymbols">
+                    <span class="asset-code">...</span>
+                </div>
+            }
+        </div>
+
+        @if (!FilteredPairs.Any())
+        {
+            <div class="no-results">
+                <p>No symbols match "@_searchTerm"</p>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public List<RHTradingPair> TradingPairs { get; set; }
+    
+    [Parameter]
+    public List<RuleSet> RuleSets { get; set; }
+    
+    [Parameter]
+    public EventCallback<RHTradingPair> OnSymbolSelected { get; set; }
+
+    private string _searchTerm = "";
+    private bool _showAll = false;
+
+    private IEnumerable<RHTradingPair> TradingPairsWithRules
+    {
+        get
+        {
+            if (TradingPairs is null || RuleSets is null) return [];
+            return TradingPairs.Where(p => RuleSets.Any(rs => rs.Symbol == p.Symbol)).OrderBy(p => p.AssetCode);
+        }
+    }
+
+    private IEnumerable<RHTradingPair> FilteredPairs
+    {
+        get
+        {
+            return TradingPairs is null 
+                ? [] : string.IsNullOrWhiteSpace(_searchTerm)
+                ? (RuleSets is null 
+                    ? TradingPairs : TradingPairs.Where(p => RuleSets.All(rs => rs.Symbol != p.Symbol))).OrderBy(p => p.AssetCode)
+                    : TradingPairs.Where(p => p.AssetCode.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)
+                        || p.Symbol.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)).OrderBy(p => p.AssetCode);
+        }
+    }
+
+    private List<RHTradingPair> DisplayedPairs
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(_searchTerm)) return FilteredPairs.ToList();
+            
+            var pairs = new List<RHTradingPair>();
+            
+            if (!string.IsNullOrEmpty(SymbolManager.SelectedSymbol))
+            {
+                var selectedPair = FilteredPairs.FirstOrDefault(p => p.Symbol == SymbolManager.SelectedSymbol);
+                if (selectedPair is not null) pairs.Add(selectedPair);
+            }
+            
+            var remaining = FilteredPairs.Where(p => p.Symbol != SymbolManager.SelectedSymbol);
+            pairs.AddRange(_showAll ? remaining : remaining.Take(20));
+            
+            return pairs;
+        }
+    }
+
+    private void ClearSearch() { _searchTerm = string.Empty; }
+
+    private void ShowAllSymbols() { _showAll = true; }
+}
